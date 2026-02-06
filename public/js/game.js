@@ -518,19 +518,6 @@
         }
     }
 
-    // Character parts for rendering (same as creator.js)
-    const CHAR_PARTS = {
-        base: ['👽', '🤖', '👾', '💀', '🎃', '🌚', '🌝', '🔵', '🟣', '⚫'],
-        eyes: ['—', '👀', '👁️', '⭐', '✨', '🔥', '❄️', '💢', '♦️', '●●'],
-        mouth: ['—', '👄', '〰️', '💋', '🔻', '⚡', '✖️', '═', '♪', '◡'],
-        accessory: ['—', '👑', '🎩', '🎀', '💎', '🌸', '⭐', '🔮', '👓', '🎭']
-    };
-
-    const CHAR_COLORS = [
-        '#00ff88', '#00aaff', '#ff3366', '#ffdd00',
-        '#ff6600', '#aa00ff', '#00ffff', '#ff00ff'
-    ];
-
     // Create player sidebar
     function createPlayerSidebar() {
         // Remove existing
@@ -542,7 +529,7 @@
         document.body.appendChild(sidebar);
     }
 
-    // Render player sidebar
+    // Render player sidebar with pixel art characters
     function renderPlayerSidebar() {
         const sidebar = document.getElementById('player-sidebar');
         if (!sidebar) return;
@@ -556,15 +543,8 @@
             if (p.lives <= 0) playerEl.classList.add('eliminated');
             if (i === state.myPlayerIndex) playerEl.classList.add('is-you');
 
-            // Get character data
+            // Get character data (pixel art)
             const char = p.character || {};
-            const color = CHAR_COLORS[char.color || 0];
-
-            // Build avatar
-            const base = CHAR_PARTS.base[char.base || 0];
-            const eyes = CHAR_PARTS.eyes[char.eyes || 1];
-            const mouth = CHAR_PARTS.mouth[char.mouth || 1];
-            const accessory = CHAR_PARTS.accessory[char.accessory || 0];
 
             // Hearts
             let hearts = '';
@@ -572,12 +552,14 @@
                 hearts += `<span class="heart ${h >= p.lives ? 'lost' : ''}">♥</span>`;
             }
 
+            // Use dataURL for pixel art, or placeholder
+            const avatarContent = char.dataURL
+                ? `<img src="${char.dataURL}" class="pixel-avatar-img" alt="${p.name}">`
+                : `<div class="pixel-avatar-placeholder">?</div>`;
+
             playerEl.innerHTML = `
-                <div class="sidebar-avatar" style="border-color: ${color}; box-shadow: 0 0 15px ${color}40;">
-                    <span class="char-base">${base}</span>
-                    <span class="char-eyes">${eyes === '—' ? '' : eyes}</span>
-                    <span class="char-mouth">${mouth === '—' ? '' : mouth}</span>
-                    <span class="char-accessory">${accessory === '—' ? '' : accessory}</span>
+                <div class="sidebar-avatar pixel-avatar">
+                    ${avatarContent}
                 </div>
                 <div class="sidebar-name">${p.name}</div>
                 <div class="sidebar-hearts">${hearts}</div>

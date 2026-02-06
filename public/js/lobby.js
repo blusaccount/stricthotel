@@ -67,13 +67,21 @@
 
     // Update character preview on start screen
     function updateCharacterPreview() {
-        const avatarSpan = $('current-avatar');
-        if (avatarSpan && window.MaexchenCreator) {
+        const avatarImg = $('current-avatar');
+        const placeholder = $('current-avatar-placeholder');
+        const btnText = avatarImg?.nextElementSibling?.nextElementSibling;
+
+        if (avatarImg && window.MaexchenCreator) {
             if (window.MaexchenCreator.hasCharacter()) {
                 window.MaexchenCreator.loadSavedCharacter();
-                avatarSpan.textContent = window.MaexchenCreator.getAvatarDisplay();
+                avatarImg.src = window.MaexchenCreator.getAvatarDisplay();
+                avatarImg.style.display = 'block';
+                if (placeholder) placeholder.style.display = 'none';
+                if (btnText) btnText.textContent = 'Charakter ändern';
             } else {
-                avatarSpan.textContent = '👽';
+                avatarImg.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'inline';
+                if (btnText) btnText.textContent = 'Charakter erstellen';
             }
         }
     }
@@ -161,17 +169,17 @@
             const item = document.createElement('div');
             item.className = 'player-item';
 
-            // Get character display
-            let avatar = '👽';
-            if (p.character && p.character.display) {
-                avatar = p.character.display;
+            // Get character display (pixel art dataURL)
+            let avatarHtml = '<span class="player-avatar-placeholder">?</span>';
+            if (p.character && p.character.dataURL) {
+                avatarHtml = `<img class="player-avatar-img" src="${p.character.dataURL}" alt="${p.name}">`;
             }
 
             let badges = '';
             if (p.isHost) badges += '<span class="badge badge-host">HOST</span>';
             if (p.name === state.playerName) badges += '<span class="badge badge-you">DU</span>';
 
-            item.innerHTML = `<span class="player-avatar">${avatar}</span><span>${p.name}</span>${badges}`;
+            item.innerHTML = `<span class="player-avatar">${avatarHtml}</span><span>${p.name}</span>${badges}`;
             list.appendChild(item);
         });
     }
