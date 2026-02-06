@@ -49,12 +49,25 @@
         return avatar;
     }
 
-    // Get avatar for player
+    // Get avatar for player (returns { type: 'emoji'|'image', value: string })
     function getAvatar(playerName) {
         if (!playerAvatars.has(playerName)) {
             assignAvatar(playerName);
         }
         return playerAvatars.get(playerName);
+    }
+
+    // Get avatar HTML for display
+    function getAvatarHTML(playerName, size = 24) {
+        const avatar = getAvatar(playerName);
+
+        // Check if it's a dataURL (pixel art)
+        if (avatar && avatar.startsWith('data:image/')) {
+            return `<img src="${avatar}" style="width:${size}px;height:${size}px;image-rendering:pixelated;vertical-align:middle;">`;
+        }
+
+        // It's an emoji
+        return `<span style="font-size:${size * 0.8}px;">${avatar || '👽'}</span>`;
     }
 
     // Get avatar color (only for players with created characters)
@@ -75,6 +88,7 @@
     window.MaexchenAvatars = {
         assignAvatar,
         getAvatar,
+        getAvatarHTML,
         getAvatarColor,
         clearAvatars,
         FALLBACK_AVATARS

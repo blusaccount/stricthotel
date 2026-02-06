@@ -110,13 +110,13 @@
         popup.style.setProperty('--emote-color', emote.color);
         popup.style.top = (100 + offset) + 'px';
 
-        // Get player avatar
-        const avatar = window.MaexchenAvatars ? window.MaexchenAvatars.getAvatar(playerName) : '';
+        // Get player avatar HTML
+        const avatarHTML = window.MaexchenAvatars ? window.MaexchenAvatars.getAvatarHTML(playerName, 20) : '';
 
         popup.innerHTML = `
             <div class="emote-popup-emoji">${emote.emoji}</div>
             <div class="emote-popup-info">
-                <div class="emote-popup-player">${avatar} ${playerName}</div>
+                <div class="emote-popup-player">${avatarHTML} ${playerName}</div>
                 <div class="emote-popup-text">${emote.text}</div>
             </div>
         `;
