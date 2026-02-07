@@ -129,48 +129,58 @@
 
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
             max-width: 900px;
-            margin: 0 auto 40px;
+            margin: 0 auto 30px;
         }
 
         .game-card {
             background: var(--surface);
-            border: 2px solid var(--accent);
-            padding: 30px;
+            border: 1px solid var(--accent);
+            padding: 12px 16px;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
 
         .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(0,255,136,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,255,136,0.25);
             border-color: var(--accent-glow);
         }
 
         .game-icon {
-            font-size: 4rem;
-            margin-bottom: 15px;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .game-card-info {
+            min-width: 0;
         }
 
         .game-title {
-            font-size: 1.5rem;
+            font-size: 0.95rem;
             color: var(--accent);
-            margin-bottom: 10px;
+            margin-bottom: 2px;
         }
 
         .game-desc {
             color: var(--text-dim);
-            font-size: 0.9rem;
-            line-height: 1.5;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .game-players {
-            margin-top: 15px;
-            font-size: 0.8rem;
+            margin-top: 4px;
+            font-size: 0.65rem;
             color: var(--gold);
         }
 
@@ -188,10 +198,10 @@
         .coming-soon-badge {
             background: var(--danger);
             color: white;
-            padding: 4px 12px;
-            font-size: 0.7rem;
+            padding: 2px 8px;
+            font-size: 0.6rem;
             letter-spacing: 1px;
-            margin-top: 15px;
+            margin-top: 4px;
             display: inline-block;
         }
 
@@ -270,23 +280,23 @@
 
             .game-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
+                gap: 10px;
             }
 
             .game-card {
-                padding: 20px;
+                padding: 10px 14px;
             }
 
             .game-icon {
-                font-size: 3rem;
+                font-size: 1.8rem;
             }
 
             .game-title {
-                font-size: 1.3rem;
+                font-size: 0.85rem;
             }
 
             .game-desc {
-                font-size: 0.85rem;
+                font-size: 0.65rem;
             }
         }
 
@@ -301,12 +311,11 @@
             }
 
             .game-icon {
-                font-size: 2.5rem;
-                margin-bottom: 10px;
+                font-size: 1.5rem;
             }
 
             .game-title {
-                font-size: 1.1rem;
+                font-size: 0.8rem;
             }
 
             .avatar-name-input {
@@ -337,42 +346,50 @@
     <div class="game-grid">
         <a href="/games/maexchen/" class="game-card">
             <div class="game-icon">🎲</div>
-            <div class="game-title">Mäxchen</div>
-            <div class="game-desc">
-                Das klassische Bluff-Würfelspiel.
-                Würfle, lüge und durchschaue die anderen!
+            <div class="game-card-info">
+                <div class="game-title">Mäxchen</div>
+                <div class="game-desc">
+                    Das klassische Bluff-Würfelspiel.
+                    Würfle, lüge und durchschaue die anderen!
+                </div>
+                <div class="game-players">2-6 Spieler</div>
             </div>
-            <div class="game-players">2-6 Spieler</div>
         </a>
 
         <a href="/games/watchparty/" class="game-card">
             <div class="game-icon">📺</div>
-            <div class="game-title">Watch Party</div>
-            <div class="game-desc">
-                Schau YouTube Videos zusammen mit deinen Freunden.
-                Synchronisiert und in Echtzeit!
+            <div class="game-card-info">
+                <div class="game-title">Watch Party</div>
+                <div class="game-desc">
+                    Schau YouTube Videos zusammen mit deinen Freunden.
+                    Synchronisiert und in Echtzeit!
+                </div>
+                <div class="game-players">2-6 Spieler</div>
             </div>
-            <div class="game-players">2-6 Spieler</div>
         </a>
 
         <a href="/games/stocks/" class="game-card">
             <div class="game-icon">📈</div>
-            <div class="game-title">Stock Market</div>
-            <div class="game-desc">
-                Investiere deine StrictCoins in echte Aktien.
-                1 SC = 1 USD – echte Kurse, virtuelles Geld!
+            <div class="game-card-info">
+                <div class="game-title">Stock Market</div>
+                <div class="game-desc">
+                    Investiere deine StrictCoins in echte Aktien.
+                    1 SC = 1 USD – echte Kurse, virtuelles Geld!
+                </div>
+                <div class="game-players">Solo Experience</div>
             </div>
-            <div class="game-players">Solo Experience</div>
         </a>
 
         <a href="/nostalgiabait/" class="game-card">
             <div class="game-icon">📼</div>
-            <div class="game-title">Nostalgiabait</div>
-            <div class="game-desc">
-                Erinnerungen an Startup-Screens vergangener Konsolen-Ären.
-                Fan-inspirierte Nachbildungen.
+            <div class="game-card-info">
+                <div class="game-title">Nostalgiabait</div>
+                <div class="game-desc">
+                    Erinnerungen an Startup-Screens vergangener Konsolen-Ären.
+                    Fan-inspirierte Nachbildungen.
+                </div>
+                <div class="game-players">Solo Experience</div>
             </div>
-            <div class="game-players">Solo Experience</div>
         </a>
     </div>
 

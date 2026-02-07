@@ -1,3 +1,30 @@
+# HANDOFF - Compact Main Menu Layout
+
+## What Was Done
+
+### UI Change: Compact Game Cards in Main Menu
+
+**Game card layout** (`public/index.html`)
+- Changed game cards from vertical (stacked) to horizontal (icon left, text right)
+- Wrapped text content in `.game-card-info` div for flex layout
+- Reduced card padding (30px → 12px), icon size (4rem → 2rem), font sizes
+- Grid now uses fixed 2-column layout instead of auto-fit with 280px minimum
+- Description text clamped to 2 lines with overflow hidden
+- Updated mobile breakpoints to match compact sizing
+- Border reduced from 2px to 1px; hover effects scaled down proportionally
+
+## Files Changed
+- `public/index.html` — CSS and HTML for compact game card layout
+
+## Verification
+- Server starts, page renders correctly
+- Game cards display in compact 2-column grid with horizontal layout
+- All game links still work
+- Mobile responsive breakpoints preserved
+- CodeQL: 0 alerts
+
+---
+
 # HANDOFF - Mäxchen Betting Feature
 
 ## What Was Done
