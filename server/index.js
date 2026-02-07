@@ -22,7 +22,7 @@ const io = new Server(server);
 app.set('trust proxy', 1);
 
 // Password protection (case-insensitive comparison)
-const PASSWORD = (process.env.SITE_PASSWORD || 'STRICT').toLowerCase();
+const PASSWORD = (process.env.SITE_PASSWORD || 'ADMIN').toLowerCase();
 
 // Session secret validation
 if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {

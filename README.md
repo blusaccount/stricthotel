@@ -2,11 +2,32 @@
 
 StrictHotel ist eine experimentelle Minigame-Sammlung im **neal.fun-inspirierten** Stil: schnelle, visuelle Web-Erlebnisse mit Multiplayer-Chaos und Nostalgie-Elementen.
 
-## Was ist im Repo?
-- **Node.js + Express + Socket.IO Server** als Backend und Echtzeit-Layer (`server.js`).
-- **Web-Frontend** unter `public/` (Startseite + "Nostalgiabait").
-- **Spiel-Module** unter `games/` (z. B. `games/maexchen/`).
-- **Gemeinsame Frontend-Logik** unter `shared/` (Chat, Lobby, Avatare, Creator, Reactions).
+## Highlights
+- Multiplayer Lobby und Rooms via Socket.IO
+- Maexchen (Wuerfel-Bluff) und Watchparty
+- Pictochat-artiges Doodle-Board in Lobby
+- Soundboard in Lobby
+- Nostalgiabait (Retro-Boot-Erlebnisse) im Bereich /nostalgiabait
+- Login-Schutz via Session + Passwort
+
+## Repo-Struktur
+- **Server**: `server.js` startet [server/index.js](server/index.js) (Express + Socket.IO)
+- **Public UI**: [public](public) (Landing, Login, Nostalgiabait, Lobby-Features)
+- **Games**: [games](games) (z. B. Maexchen, Watchparty)
+- **Shared**: [shared](shared) (Chat, Lobby, Avatare, Creator, CSS, Audio)
+- **Bot**: [bot](bot) (Discord Bot + Commands)
+
+## Lokal starten
+```
+npm install
+npm run dev
+```
+Server startet unter `http://localhost:3000`.
+
+## Konfiguration (Env)
+- `SESSION_SECRET` (required in production)
+- `SITE_PASSWORD` (Login-Passwort, default: ADMIN)
+- `CLIENT_ID` und `GUILD_ID` fuer Discord Bot (optional)
 
 ## Kurz gesagt
-Dieses Repository bündelt eine spielbare Website und Multiplayer-Features – mit Fokus auf kreative Mini-Games, Social-Interaktion und stilisierte Retro-Atmosphäre.
+Dieses Repository buendelt eine spielbare Website und Multiplayer-Features mit Fokus auf kreative Mini-Games, Social-Interaktion und stilisierte Retro-Atmosphaere.
