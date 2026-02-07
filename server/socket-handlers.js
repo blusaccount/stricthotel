@@ -49,7 +49,7 @@ function validateGameType(gameType) {
 
 function validateYouTubeId(videoId) {
     if (typeof videoId !== 'string') return '';
-    return videoId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20);
+    return videoId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 11);
 }
 
 // ============== RATE LIMITING ==============

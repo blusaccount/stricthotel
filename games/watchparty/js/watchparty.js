@@ -9,6 +9,7 @@
     let isHost = false;
     let ignorePlayerEvents = false;
     let currentVideoId = null;
+    let syncIntervalId = null;
 
     // --- Extract YouTube Video ID from URL or ID ---
     function extractVideoId(input) {
@@ -21,17 +22,17 @@
         try {
             var url = new URL(input);
             // youtube.com/watch?v=ID
-            if (url.searchParams.has('v')) return url.searchParams.get('v').slice(0, 20);
+            if (url.searchParams.has('v')) return url.searchParams.get('v').slice(0, 11);
             // youtu.be/ID
-            if (url.hostname === 'youtu.be') return url.pathname.slice(1).split('/')[0].slice(0, 20);
+            if (url.hostname === 'youtu.be') return url.pathname.slice(1).split('/')[0].slice(0, 11);
             // youtube.com/embed/ID
             var embedMatch = url.pathname.match(/\/embed\/([a-zA-Z0-9_-]+)/);
-            if (embedMatch) return embedMatch[1].slice(0, 20);
+            if (embedMatch) return embedMatch[1].slice(0, 11);
             // youtube.com/shorts/ID
             var shortsMatch = url.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
-            if (shortsMatch) return shortsMatch[1].slice(0, 20);
+            if (shortsMatch) return shortsMatch[1].slice(0, 11);
         } catch (_) {
-            // Not a URL
+            // Not a valid URL
         }
 
         return '';
@@ -92,13 +93,23 @@
     }
 
     // --- Host: Periodic sync (every 5 seconds while playing) ---
-    setInterval(function () {
-        if (!isHost || !ytPlayer || !ytPlayer.getPlayerState) return;
-        if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-            var time = ytPlayer.getCurrentTime();
-            socket.emit('watchparty-seek', time);
+    function startSyncInterval() {
+        stopSyncInterval();
+        syncIntervalId = setInterval(function () {
+            if (!isHost || !ytPlayer || !ytPlayer.getPlayerState) return;
+            if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+                var time = ytPlayer.getCurrentTime();
+                socket.emit('watchparty-seek', time);
+            }
+        }, 5000);
+    }
+
+    function stopSyncInterval() {
+        if (syncIntervalId) {
+            clearInterval(syncIntervalId);
+            syncIntervalId = null;
         }
-    }, 5000);
+    }
 
     // --- Game Started (transition from waiting to game screen) ---
     socket.on('game-started', function () {
@@ -119,6 +130,9 @@
             window.MaexchenChat.showChat();
             window.MaexchenChat.addLocalMessage('Watch Party gestartet!');
         }
+
+        // Start periodic sync
+        startSyncInterval();
 
         // Show player list
         renderPartyPlayers();
@@ -257,5 +271,18 @@
     // Override start-game to not need 2 players for watch party
     // The shared lobby module handles the start-game button visibility
     // Host can start with just themselves
+
+    // Expose cleanup for core.js title-click navigation
+    window.MaexchenWatchParty = {
+        cleanup: function () {
+            stopSyncInterval();
+            if (ytPlayer && ytPlayer.destroy) {
+                ytPlayer.destroy();
+            }
+            ytPlayer = null;
+            currentVideoId = null;
+            isHost = false;
+        }
+    };
 
 })();
