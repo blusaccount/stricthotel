@@ -23,6 +23,18 @@
             --ds-radius: 0px;
         }
 
+        [data-theme="dark"] {
+            --ds-bg: #1a1a2e;
+            --ds-surface: #16213e;
+            --ds-border: #e0e0e0;
+            --ds-text: #eaeaea;
+            --ds-text-dim: #a0a0a0;
+            --ds-highlight: #0f3460;
+            --ds-accent: #5588ee;
+            --ds-positive: #44bb66;
+            --ds-negative: #ee5555;
+        }
+
         body {
             font-family: 'Press Start 2P', monospace;
             font-size: 10px;
@@ -841,9 +853,45 @@
             .versus-code-display { font-size: 18px; letter-spacing: 4px; }
             .versus-sb-score { font-size: 13px; }
         }
+
+        /* ===== Theme Toggle ===== */
+        .theme-toggle {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1000;
+        }
+
+        .theme-toggle-btn {
+            background: var(--ds-surface);
+            border: 2px solid var(--ds-border);
+            color: var(--ds-text);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            transition: all 0.15s;
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--ds-highlight);
+            box-shadow: 3px 3px 0 var(--ds-border);
+        }
     </style>
 </head>
 <body>
+
+<!-- Theme toggle button -->
+<div class="theme-toggle">
+    <button class="theme-toggle-btn" id="theme-toggle" type="button" title="Toggle Dark/Light Mode" aria-label="Toggle Dark/Light Mode">
+        <span id="theme-toggle-icon" aria-hidden="true">💡</span>
+    </button>
+</div>
 
 <div class="brain-page">
     <!-- Header -->
@@ -1158,6 +1206,42 @@
 })();
 </script>
 <script src="/games/strictbrain/js/game.js"></script>
+
+<!-- Dark/Light Mode Toggle -->
+<script>
+(function () {
+    'use strict';
+
+    var STORAGE_THEME = 'strictbrain-theme';
+    var toggleBtn = document.getElementById('theme-toggle');
+    var toggleIcon = document.getElementById('theme-toggle-icon');
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (toggleIcon) {
+            toggleIcon.textContent = theme === 'dark' ? '🔆' : '💡';
+        }
+        if (toggleBtn) {
+            toggleBtn.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        }
+    }
+
+    function toggleTheme() {
+        var current = localStorage.getItem(STORAGE_THEME) || 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(STORAGE_THEME, next);
+        applyTheme(next);
+    }
+
+    // Restore saved theme on load
+    var saved = localStorage.getItem(STORAGE_THEME) || 'light';
+    applyTheme(saved);
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleTheme);
+    }
+})();
+</script>
 
 </body>
 </html>
