@@ -18,8 +18,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Password protection
-const PASSWORD = process.env.SITE_PASSWORD || 'STRICT';
+// Trust proxy (Render terminates SSL at the proxy layer)
+app.set('trust proxy', 1);
+
+// Password protection (case-insensitive comparison)
+const PASSWORD = (process.env.SITE_PASSWORD || 'STRICT').toLowerCase();
 
 // Session secret validation
 if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
@@ -46,7 +49,7 @@ app.use(express.json());
 // Login route (must be before auth middleware)
 app.post('/login', (req, res) => {
     const { password } = req.body;
-    if (password === PASSWORD) {
+    if (password && password.toLowerCase() === PASSWORD) {
         req.session.authenticated = true;
         res.json({ success: true });
     } else {
