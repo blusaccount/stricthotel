@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock the db module so currency.js never touches a real database
 vi.mock('../db.js', () => ({
@@ -15,11 +15,6 @@ const {
 } = await import('../currency.js');
 
 describe('currency (in-memory mode)', () => {
-    beforeEach(() => {
-        // Clear the internal balances Map between tests by resetting module state
-        // We rely on fresh players each test to avoid cross-contamination
-    });
-
     it('exports STARTING_BALANCE as 1000', () => {
         expect(STARTING_BALANCE).toBe(1000);
     });
