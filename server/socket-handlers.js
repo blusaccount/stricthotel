@@ -216,6 +216,21 @@ function getAllGameLeaderboards() {
     return result;
 }
 
+function calculateBrainCoins(brainAge) {
+    if (brainAge <= 25) return 50;
+    if (brainAge <= 35) return 30;
+    if (brainAge <= 45) return 20;
+    if (brainAge <= 55) return 10;
+    return 5;
+}
+
+function calculateTrainingCoins(score) {
+    // Training: half of daily test coins, minimum 2
+    const brainAge = Math.round(80 - (score / 100) * 60);
+    const clamped = Math.max(20, Math.min(80, brainAge));
+    return Math.max(2, Math.floor(calculateBrainCoins(clamped) / 2));
+}
+
 function updateGameScore(gameId, name, score) {
     const board = brainGameLeaderboards[gameId];
     if (!board) return;
@@ -1268,8 +1283,8 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             const brainAge = Number(data.brainAge);
             if (!Number.isFinite(brainAge) || brainAge < 20 || brainAge > 80) return;
 
-            const coins = Number(data.coins);
-            if (!Number.isFinite(coins) || coins < 0 || coins > 100) return;
+            // Server calculates coins (don't trust client)
+            const coins = calculateBrainCoins(brainAge);
 
             // Update leaderboard (keep best score = lowest brain age)
             const current = brainLeaderboard.get(name);
@@ -1287,10 +1302,8 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             }
 
             // Award coins
-            if (coins > 0) {
-                await addBalance(name, coins, 'brain_reward');
-                socket.emit('balance-update', { balance: await getBalance(name) });
-            }
+            await addBalance(name, coins, 'brain_reward');
+            socket.emit('balance-update', { balance: await getBalance(name) });
 
             // Broadcast updated leaderboard
             io.emit('brain-leaderboard', getBrainLeaderboardSorted());
@@ -1315,22 +1328,18 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             const name = sanitizeName(data.playerName);
             if (!name) return;
 
-            const coins = Number(data.coins);
-            if (!Number.isFinite(coins) || coins < 0 || coins > 50) return;
-
             // Update per-game leaderboard
             if (data.gameId && VALID_BRAIN_GAME_IDS.includes(data.gameId)) {
                 const s = Number(data.score);
                 if (Number.isFinite(s) && s >= 0 && s <= 100) {
                     updateGameScore(data.gameId, name, s);
                     io.emit('brain-game-leaderboards', getAllGameLeaderboards());
-                }
-            }
 
-            // Award coins for free training
-            if (coins > 0) {
-                await addBalance(name, coins, 'brain_reward');
-                socket.emit('balance-update', { balance: await getBalance(name) });
+                    // Server calculates coins (don't trust client)
+                    const coins = calculateTrainingCoins(s);
+                    await addBalance(name, coins, 'brain_reward');
+                    socket.emit('balance-update', { balance: await getBalance(name) });
+                }
             }
         } catch (err) { console.error('brain-training-score error:', err.message); } });
 
@@ -1539,7 +1548,27 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
 
             const room = getRoom(socket.id);
             if (room) {
+                // Brain Versus: handle forfeit before generic cleanup
+                if (room.gameType === 'strictbrain' && room.game) {
+                    const opponent = room.game.players.find(p => p.socketId !== socket.id);
+                    if (opponent) {
+                        await addBalance(opponent.name, 20, 'brain_versus_forfeit', { roomCode: room.code });
+                        const balance = await getBalance(opponent.name);
+                        io.to(opponent.socketId).emit('balance-update', { balance });
+                        io.to(opponent.socketId).emit('brain-versus-result', {
+                            winner: opponent.name,
+                            isDraw: false,
+                            players: room.game.players.map(p => ({ name: p.name, score: p.finalScore || 0 })),
+                            coins: 20,
+                            forfeit: true
+                        });
+                    }
+                    room.game = null;
+                }
                 await removePlayerFromRoom(io, socket.id, room);
+                if (room.gameType === 'strictbrain') {
+                    broadcastLobbies(io, 'strictbrain');
+                }
             }
         } catch (err) { console.error('disconnect error:', err.message); } });
     });

@@ -57,13 +57,37 @@
     let gameLeaderboardData = {};
     let activeGameTab = 'math';
 
-    const GAME_TAB_NAMES = {
+    const GAME_NAMES = {
         math: '➗ Mathe-Blitz',
         stroop: '🎨 Farbe vs. Wort',
         chimp: '🔢 Zahlen-Memory',
         reaction: '⚡ Reaktionstest',
         scramble: '🔤 Wort-Scramble'
     };
+
+    const SCRAMBLE_WORDS = [
+        'HOTEL', 'STERN', 'GABEL', 'WOLKE', 'BLUME', 'TISCH', 'KERZE', 'STURM',
+        'STADT', 'STEIN', 'FISCH', 'VOGEL', 'SCHAF', 'GRUEN', 'LAMPE', 'NADEL',
+        'HAFEN', 'NACHT', 'REGEN', 'SONNE', 'ESSEN', 'MUSIK', 'BRIEF', 'WAGEN',
+        'PFERD', 'KATZE', 'MILCH', 'BODEN', 'BIRNE', 'SALAT', 'TRAUM', 'FARBE',
+        'STIFT', 'RADIO', 'SPORT', 'PLATZ', 'SORTE', 'KARTE', 'KLEID', 'BLATT',
+        'FRUCHT', 'GARTEN', 'SOMMER', 'WINTER', 'MORGEN', 'FLASCHE', 'BRILLE',
+        'KOFFER', 'BALKON', 'FENSTER', 'SCHULE'
+    ];
+
+    function scrambleWord(word) {
+        const arr = word.split('');
+        if (arr.length <= 1) return arr.join('');
+        let attempts = 0;
+        do {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+            }
+            attempts++;
+        } while (arr.join('') === word && attempts < 10);
+        return arr.join('');
+    }
 
     socket.on('brain-game-leaderboards', (data) => {
         if (!data) return;
@@ -76,7 +100,7 @@
         const title = $('game-lb-title');
         if (!list || !title) return;
 
-        title.textContent = GAME_TAB_NAMES[gameId] || gameId;
+        title.textContent = GAME_NAMES[gameId] || gameId;
 
         const entries = gameLeaderboardData[gameId];
         if (!entries || entries.length === 0) {
@@ -196,14 +220,6 @@
         if (brainAge <= 55) return 10;
         return 5;
     }
-
-    const GAME_NAMES = {
-        math: '➗ Mathe-Blitz',
-        stroop: '🎨 Farbe vs. Wort',
-        chimp: '🔢 Zahlen-Memory',
-        reaction: '⚡ Reaktionstest',
-        scramble: '🔤 Wort-Scramble'
-    };
 
     function showDailyResults() {
         const scores = dailyResults.map(r => r.score);
@@ -679,45 +695,20 @@
     // ============== 5. WORT-SCRAMBLE ==============
 
     function startScrambleGame() {
-        const WORDS = [
-            'HOTEL', 'STERN', 'GABEL', 'WOLKE', 'BLUME', 'TISCH', 'KERZE', 'STURM',
-            'STADT', 'STEIN', 'FISCH', 'VOGEL', 'SCHAF', 'GRUEN', 'LAMPE', 'NADEL',
-            'HAUSE', 'NACHT', 'REGEN', 'SONNE', 'ESSEN', 'MUSIK', 'BRIEF', 'WAGEN',
-            'PFERD', 'KATZE', 'MILCH', 'BODEN', 'BIRNE', 'SALAT', 'TRAUM', 'FARBE',
-            'STIFT', 'RADIO', 'SPORT', 'PLATZ', 'SORTE', 'KARTE', 'KLEID', 'BLATT',
-            'FRUCHT', 'GARTEN', 'SOMMER', 'WINTER', 'MORGEN', 'FLASCHE', 'BRILLE',
-            'KOFFER', 'BALKON', 'FENSTER', 'SCHULE'
-        ];
-
         let score = 0;
         let wordIndex = 0;
         const usedWords = [];
 
         const area = $('game-area');
 
-        function scrambleWord(word) {
-            const arr = word.split('');
-            if (arr.length <= 1) return arr.join('');
-            // Shuffle until different from original
-            let attempts = 0;
-            do {
-                for (let i = arr.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
-                }
-                attempts++;
-            } while (arr.join('') === word && attempts < 10);
-            return arr.join('');
-        }
-
         function nextWord() {
             // Reset used words pool when exhausted
-            if (usedWords.length >= WORDS.length) {
+            if (usedWords.length >= SCRAMBLE_WORDS.length) {
                 usedWords.length = 0;
             }
             let word;
             do {
-                word = WORDS[Math.floor(Math.random() * WORDS.length)];
+                word = SCRAMBLE_WORDS[Math.floor(Math.random() * SCRAMBLE_WORDS.length)];
             } while (usedWords.includes(word));
             usedWords.push(word);
 
@@ -1255,7 +1246,8 @@
                     reactionTimes.push(Math.round(rt));
                     zone.className = 'reaction-area result';
                     zone.innerHTML = Math.round(rt) + ' ms';
-                    versusScoreUpdate(reactionTimes.length);
+                    const avgMs = Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length);
+                    versusScoreUpdate(avgMs);
                     setTimeout(nextRound, 800);
                 } else if (state === 'waiting') {
                     falseStarts++;
@@ -1286,37 +1278,14 @@
 
     // ----- Versus: Scramble -----
     function startVersusScrambleGame() {
-        const WORDS = [
-            'HOTEL', 'STERN', 'GABEL', 'WOLKE', 'BLUME', 'TISCH', 'KERZE', 'STURM',
-            'STADT', 'STEIN', 'FISCH', 'VOGEL', 'SCHAF', 'GRUEN', 'LAMPE', 'NADEL',
-            'HAUSE', 'NACHT', 'REGEN', 'SONNE', 'ESSEN', 'MUSIK', 'BRIEF', 'WAGEN',
-            'PFERD', 'KATZE', 'MILCH', 'BODEN', 'BIRNE', 'SALAT', 'TRAUM', 'FARBE',
-            'STIFT', 'RADIO', 'SPORT', 'PLATZ', 'SORTE', 'KARTE', 'KLEID', 'BLATT',
-            'FRUCHT', 'GARTEN', 'SOMMER', 'WINTER', 'MORGEN', 'FLASCHE', 'BRILLE',
-            'KOFFER', 'BALKON', 'FENSTER', 'SCHULE'
-        ];
         let score = 0;
         const usedWords = [];
         const area = $('versus-game-area');
 
-        function scrambleWord(word) {
-            const arr = word.split('');
-            if (arr.length <= 1) return arr.join('');
-            let attempts = 0;
-            do {
-                for (let i = arr.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
-                }
-                attempts++;
-            } while (arr.join('') === word && attempts < 10);
-            return arr.join('');
-        }
-
         function nextWord() {
-            if (usedWords.length >= WORDS.length) usedWords.length = 0;
+            if (usedWords.length >= SCRAMBLE_WORDS.length) usedWords.length = 0;
             let word;
-            do { word = WORDS[Math.floor(Math.random() * WORDS.length)]; } while (usedWords.includes(word));
+            do { word = SCRAMBLE_WORDS[Math.floor(Math.random() * SCRAMBLE_WORDS.length)]; } while (usedWords.includes(word));
             usedWords.push(word);
             const scrambled = scrambleWord(word);
             area.innerHTML =

@@ -1077,6 +1077,21 @@
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+    var homeBtn = document.querySelector('.brain-home');
+    if (!homeBtn) return;
+    var switchSound = new Audio('/userinput/switch.mp3');
+    switchSound.preload = 'auto';
+    switchSound.volume = 0.25;
+    homeBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        var href = homeBtn.getAttribute('href');
+        try { switchSound.currentTime = 0; switchSound.play().catch(function(){}); } catch(ex) {}
+        setTimeout(function () { window.location.href = href; }, 250);
+    });
+})();
+</script>
 <script src="/games/strictbrain/js/game.js"></script>
 
 </body>
