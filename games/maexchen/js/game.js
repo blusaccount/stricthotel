@@ -81,10 +81,32 @@
         socket.emit('place-bet', { amount });
     });
 
-    socket.on('bets-update', ({ bets }) => {
+    socket.on('bets-update', ({ bets, requiredBet }) => {
         const list = $('bet-list');
         if (!list) return;
         const hasBets = bets.some(b => b.bet > 0);
+
+        // Update input field to show required bet amount
+        const input = $('input-bet');
+        if (input && requiredBet > 0) {
+            input.value = requiredBet;
+            input.disabled = true;
+        } else if (input) {
+            input.disabled = false;
+        }
+
+        // Show required bet info
+        const infoEl = $('bet-required-info');
+        if (infoEl) {
+            if (requiredBet > 0) {
+                infoEl.textContent = `Einsatz festgelegt: ${requiredBet} Coins für alle`;
+                infoEl.style.display = 'block';
+            } else {
+                infoEl.textContent = '';
+                infoEl.style.display = 'none';
+            }
+        }
+
         if (!hasBets) {
             list.innerHTML = '';
             return;
