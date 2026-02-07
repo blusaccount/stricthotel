@@ -140,6 +140,22 @@ const TICKER_SYMBOLS = [
     { symbol: 'BRK-B', name: 'Berkshire Hathaway' },
     { symbol: 'XOM', name: 'ExxonMobil' },
     { symbol: 'UNH', name: 'UnitedHealth' },
+    // Metals & Resources
+    { symbol: 'GC=F', name: 'Gold' },
+    { symbol: 'SI=F', name: 'Silver' },
+    { symbol: 'PL=F', name: 'Platinum' },
+    { symbol: 'HG=F', name: 'Copper' },
+    { symbol: 'CL=F', name: 'Crude Oil WTI' },
+    { symbol: 'BZ=F', name: 'Brent Crude Oil' },
+    { symbol: 'NG=F', name: 'Natural Gas' },
+    // Crypto
+    { symbol: 'BTC-USD', name: 'Bitcoin' },
+    { symbol: 'ETH-USD', name: 'Ethereum' },
+    { symbol: 'SOL-USD', name: 'Solana' },
+    { symbol: 'BNB-USD', name: 'BNB' },
+    { symbol: 'XRP-USD', name: 'XRP' },
+    { symbol: 'ADA-USD', name: 'Cardano' },
+    { symbol: 'DOGE-USD', name: 'Dogecoin' },
 ];
 
 let tickerCache = { data: null, ts: 0 };

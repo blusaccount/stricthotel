@@ -167,7 +167,9 @@ const ALLOWED_STOCK_SYMBOLS = new Set([
     'IWM', 'VTI', 'ARKK', 'XLF', 'XLE', 'GLD', 'TLT',
     'AMD', 'CRM', 'AVGO', 'ORCL', 'ADBE', 'DIS', 'PYPL', 'INTC',
     'BA', 'V', 'JPM', 'WMT', 'KO', 'PEP', 'JNJ', 'PG', 'BRKB',
-    'XOM', 'UNH'
+    'XOM', 'UNH',
+    'GC=F', 'SI=F', 'PL=F', 'HG=F', 'CL=F', 'BZ=F', 'NG=F',
+    'BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD'
 ]);
 
 let _fetchTickerQuotes = null;
@@ -217,7 +219,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             if (!data || typeof data !== 'object') return;
 
             const symbol = typeof data.symbol === 'string'
-                ? data.symbol.replace(/[^A-Z0-9.\-]/g, '').slice(0, 12) : '';
+                ? data.symbol.replace(/[^A-Z0-9.\-=]/g, '').slice(0, 12) : '';
             if (!symbol) {
                 socket.emit('stock-error', { error: 'Invalid symbol' });
                 return;
@@ -267,7 +269,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             if (!data || typeof data !== 'object') return;
 
             const symbol = typeof data.symbol === 'string'
-                ? data.symbol.replace(/[^A-Z0-9.\-]/g, '').slice(0, 12) : '';
+                ? data.symbol.replace(/[^A-Z0-9.\-=]/g, '').slice(0, 12) : '';
             if (!symbol) {
                 socket.emit('stock-error', { error: 'Invalid symbol' });
                 return;

@@ -29,10 +29,16 @@
     var searchInput = $('stock-search');
     var searchResults = $('search-results');
 
-    // ETF symbols for category filtering
+    // Category maps for filtering
     var ETF_SYMBOLS = [
         'URTH', 'QQQ', 'GDAXI', 'DIA', 'SPY', 'VGK', 'EEM',
         'IWM', 'VTI', 'ARKK', 'XLF', 'XLE', 'GLD', 'TLT'
+    ];
+    var COMMODITY_SYMBOLS = [
+        'GC=F', 'SI=F', 'PL=F', 'HG=F', 'CL=F', 'BZ=F', 'NG=F'
+    ];
+    var CRYPTO_SYMBOLS = [
+        'BTC-USD', 'ETH-USD', 'SOL-USD', 'BNB-USD', 'XRP-USD', 'ADA-USD', 'DOGE-USD'
     ];
 
     var FALLBACK_QUOTES = [
@@ -77,6 +83,22 @@
         { symbol: 'XLE', name: 'Energy ETF', price: 88.90, change: -0.40, pct: -0.45, currency: 'USD' },
         { symbol: 'GLD', name: 'Gold ETF', price: 242.10, change: 1.80, pct: 0.75, currency: 'USD' },
         { symbol: 'TLT', name: 'US Treasury 20+', price: 92.30, change: 0.15, pct: 0.16, currency: 'USD' },
+        // Metals & Resources
+        { symbol: 'GC=F', name: 'Gold', price: 2650.40, change: 12.30, pct: 0.47, currency: 'USD' },
+        { symbol: 'SI=F', name: 'Silver', price: 31.20, change: 0.45, pct: 1.46, currency: 'USD' },
+        { symbol: 'PL=F', name: 'Platinum', price: 985.60, change: -3.20, pct: -0.32, currency: 'USD' },
+        { symbol: 'HG=F', name: 'Copper', price: 4.18, change: 0.03, pct: 0.72, currency: 'USD' },
+        { symbol: 'CL=F', name: 'Crude Oil WTI', price: 72.80, change: -0.65, pct: -0.88, currency: 'USD' },
+        { symbol: 'BZ=F', name: 'Brent Crude Oil', price: 76.40, change: -0.50, pct: -0.65, currency: 'USD' },
+        { symbol: 'NG=F', name: 'Natural Gas', price: 3.25, change: 0.08, pct: 2.52, currency: 'USD' },
+        // Crypto
+        { symbol: 'BTC-USD', name: 'Bitcoin', price: 97500.00, change: 1250.00, pct: 1.30, currency: 'USD' },
+        { symbol: 'ETH-USD', name: 'Ethereum', price: 3420.50, change: -45.20, pct: -1.30, currency: 'USD' },
+        { symbol: 'SOL-USD', name: 'Solana', price: 198.30, change: 8.40, pct: 4.42, currency: 'USD' },
+        { symbol: 'BNB-USD', name: 'BNB', price: 685.20, change: 12.80, pct: 1.90, currency: 'USD' },
+        { symbol: 'XRP-USD', name: 'XRP', price: 2.45, change: 0.12, pct: 5.15, currency: 'USD' },
+        { symbol: 'ADA-USD', name: 'Cardano', price: 0.98, change: -0.03, pct: -2.97, currency: 'USD' },
+        { symbol: 'DOGE-USD', name: 'Dogecoin', price: 0.38, change: 0.02, pct: 5.56, currency: 'USD' },
     ];
 
     var currentBalance = 0;
@@ -136,18 +158,20 @@
             .catch(function () { /* use fallback if already rendered */ });
     }
 
-    // --- Determine stock type ---
+    // --- Determine asset type ---
     function getStockType(symbol) {
-        return ETF_SYMBOLS.indexOf(symbol) >= 0 ? 'ETF' : 'STOCK';
+        if (COMMODITY_SYMBOLS.indexOf(symbol) >= 0) return 'COMMODITY';
+        if (CRYPTO_SYMBOLS.indexOf(symbol) >= 0) return 'CRYPTO';
+        if (ETF_SYMBOLS.indexOf(symbol) >= 0) return 'ETF';
+        return 'STOCK';
     }
 
     // --- Render Market Grid ---
     function renderMarket() {
         var filtered = marketData;
-        if (activeCategory === 'etf') {
-            filtered = marketData.filter(function (q) { return getStockType(q.symbol) === 'ETF'; });
-        } else if (activeCategory === 'stock') {
-            filtered = marketData.filter(function (q) { return getStockType(q.symbol) === 'STOCK'; });
+        if (activeCategory !== 'all') {
+            var cat = activeCategory.toUpperCase();
+            filtered = marketData.filter(function (q) { return getStockType(q.symbol) === cat; });
         }
 
         marketGrid.innerHTML = filtered.map(function (q) {

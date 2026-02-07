@@ -30,6 +30,14 @@
     { symbol: 'JPM', name: 'JPMorgan Chase', price: 242.30, change: 2.10, pct: 0.87, currency: 'USD' },
     { symbol: 'WMT', name: 'Walmart', price: 92.40, change: 0.35, pct: 0.38, currency: 'USD' },
     { symbol: 'KO', name: 'Coca-Cola', price: 62.10, change: 0.20, pct: 0.32, currency: 'USD' },
+    { symbol: 'GC=F', name: 'Gold', price: 2650.40, change: 12.30, pct: 0.47, currency: 'USD' },
+    { symbol: 'SI=F', name: 'Silver', price: 31.20, change: 0.45, pct: 1.46, currency: 'USD' },
+    { symbol: 'CL=F', name: 'Crude Oil', price: 72.80, change: -0.65, pct: -0.88, currency: 'USD' },
+    { symbol: 'NG=F', name: 'Natural Gas', price: 3.25, change: 0.08, pct: 2.52, currency: 'USD' },
+    { symbol: 'BTC-USD', name: 'Bitcoin', price: 97500.00, change: 1250.00, pct: 1.30, currency: 'USD' },
+    { symbol: 'ETH-USD', name: 'Ethereum', price: 3420.50, change: -45.20, pct: -1.30, currency: 'USD' },
+    { symbol: 'SOL-USD', name: 'Solana', price: 198.30, change: 8.40, pct: 4.42, currency: 'USD' },
+    { symbol: 'XRP-USD', name: 'XRP', price: 2.45, change: 0.12, pct: 5.15, currency: 'USD' },
   ];
 
   const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', CHF: 'CHF ' };
