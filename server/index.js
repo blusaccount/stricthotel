@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
+import session from 'express-session';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
@@ -16,6 +17,61 @@ const rootDir = path.join(__dirname, '..');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// Password protection
+const PASSWORD = process.env.SITE_PASSWORD || 'STRICT';
+
+// Session secret validation
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+    console.error('ERROR: SESSION_SECRET environment variable is required in production');
+    process.exit(1);
+}
+
+// Session middleware
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'strict-hotel-dev-secret-' + Math.random(),
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+    }
+}));
+
+// Body parser for login
+app.use(express.json());
+
+// Login route (must be before auth middleware)
+app.post('/login', (req, res) => {
+    const { password } = req.body;
+    if (password === PASSWORD) {
+        req.session.authenticated = true;
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false, message: 'Incorrect password' });
+    }
+});
+
+// Auth middleware - protect all routes except login
+app.use((req, res, next) => {
+    // Allow access to login page, health check, and static assets needed for login
+    if (req.path === '/login.html' || 
+        req.path === '/health' ||
+        req.path.startsWith('/shared/css/') ||
+        req.path.startsWith('/shared/fonts/')) {
+        return next();
+    }
+
+    // Check if user is authenticated
+    if (req.session.authenticated) {
+        return next();
+    }
+
+    // Redirect to login page
+    res.redirect('/login.html');
+});
 
 // Static files
 app.use(express.static(path.join(rootDir, 'public')));
