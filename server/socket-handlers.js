@@ -144,11 +144,29 @@ function trimStrokes() {
     }
 }
 
-function cleanupPictoForSocket(socketId) {
+function cleanupPictoForSocket(socketId, io) {
     pictoState.redoStacks.delete(socketId);
     for (const [strokeId, stroke] of pictoState.inProgress.entries()) {
         if (stroke.authorId === socketId) {
             pictoState.inProgress.delete(strokeId);
+            // Commit in-progress strokes so they don't vanish for other clients
+            if (stroke.points && stroke.points.length > 0) {
+                pictoState.strokes.push(stroke);
+                trimStrokes();
+                if (io) {
+                    io.to(PICTO_ROOM).emit('picto-stroke-commit', {
+                        strokeId: stroke.strokeId,
+                        authorId: stroke.authorId,
+                        tool: stroke.tool,
+                        color: stroke.color,
+                        size: stroke.size,
+                        points: stroke.points
+                    });
+                }
+                saveStroke(stroke).catch(err => {
+                    console.error('saveStroke cleanup error:', err.message);
+                });
+            }
         }
     }
 }
@@ -1331,7 +1349,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             // Cleanup rate limiter
             rateLimiters.delete(socket.id);
 
-            cleanupPictoForSocket(socket.id);
+            cleanupPictoForSocket(socket.id, io);
             io.to(PICTO_ROOM).emit('picto-cursor-hide', { id: socket.id });
 
             // Remove from online players
