@@ -22,3 +22,21 @@ create table if not exists wallet_ledger (
   metadata jsonb,
   created_at timestamptz not null default now()
 );
+
+create table if not exists picto_strokes (
+  id bigserial primary key,
+  stroke_id text not null unique,
+  author_name text not null,
+  tool text not null,
+  color text not null,
+  size integer not null,
+  data jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists picto_messages (
+  id bigserial primary key,
+  author_name text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);

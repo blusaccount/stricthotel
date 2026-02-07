@@ -518,6 +518,13 @@
             strokes = Array.isArray(data.strokes) ? data.strokes : [];
             renderPage();
             updateStatus('Ready');
+
+            // Replay persisted messages
+            if (Array.isArray(data.messages)) {
+                for (var i = 0; i < data.messages.length; i++) {
+                    appendMessage(data.messages[i]);
+                }
+            }
         });
 
         socket.on('picto-stroke-segment', function (data) {
