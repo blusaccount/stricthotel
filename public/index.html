@@ -392,6 +392,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Soundboard -->
+    <div class="soundboard-section" id="soundboard-panel">
+        <div class="soundboard-header">
+            <div>
+                <div class="soundboard-title">SOUNDBOARD</div>
+                <div class="soundboard-subtitle">Shared sounds in the lobby</div>
+            </div>
+            <div class="soundboard-controls">
+                <button class="soundboard-mute" id="soundboard-mute" type="button">
+                    <span class="soundboard-mute-icon">&#x1F50A;</span>
+                </button>
+                <div class="soundboard-volume">
+                    <input id="soundboard-volume" type="range" min="0" max="100" value="70">
+                </div>
+            </div>
+        </div>
+        <div class="soundboard-body">
+            <div class="soundboard-grid" id="soundboard-grid"></div>
+        </div>
+        <div class="soundboard-toast-area" id="soundboard-toasts"></div>
+    </div>
 </div>
 
 <!-- Socket.io -->
@@ -405,6 +427,9 @@
 
 <!-- Pictochat Logic -->
 <script src="/pictochat.js"></script>
+
+<!-- Soundboard Logic -->
+<script src="/soundboard.js"></script>
 
 </body>
 </html>

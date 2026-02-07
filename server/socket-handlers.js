@@ -68,6 +68,14 @@ function checkRateLimit(socketId, maxPerSecond = 10) {
     return entry.count <= maxPerSecond;
 }
 
+// ============== SOUNDBOARD STATE ==============
+
+const SOUNDBOARD_ROOM = 'lobby-soundboard';
+const SOUNDBOARD_VALID_IDS = new Set([
+    'airhorn', 'bruh', 'crickets', 'dramatic', 'fart', 'fail',
+    'laugh', 'mgs-alert', 'nope', 'oof', 'sad-trombone', 'surprise'
+]);
+
 // ============== PICTOCHAT STATE ==============
 
 const PICTO_ROOM = 'lobby-picto';
@@ -362,6 +370,25 @@ export function registerSocketHandlers(io) {
                 timestamp: Date.now()
             });
         } catch (err) { console.error('picto-message error:', err.message); } });
+
+        // ============== SOUNDBOARD HANDLERS ==============
+
+        socket.on('soundboard-join', () => { try {
+            if (!checkRateLimit(socket.id)) return;
+            socket.join(SOUNDBOARD_ROOM);
+        } catch (err) { console.error('soundboard-join error:', err.message); } });
+
+        socket.on('soundboard-play', (soundId) => { try {
+            if (!checkRateLimit(socket.id, 3)) return;
+            if (typeof soundId !== 'string') return;
+            if (!SOUNDBOARD_VALID_IDS.has(soundId)) return;
+
+            io.to(SOUNDBOARD_ROOM).emit('soundboard-played', {
+                soundId,
+                playerName: getPictoName(socket.id),
+                timestamp: Date.now()
+            });
+        } catch (err) { console.error('soundboard-play error:', err.message); } });
 
         // --- Request Lobbies ---
         socket.on('get-lobbies', (gameType) => { try {
