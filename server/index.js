@@ -92,6 +92,107 @@ app.get('/health', (req, res) => {
     });
 });
 
+// ============== STOCK TICKER API ==============
+
+const TICKER_SYMBOLS = [
+    // ETFs / Indices (primary focus)
+    { symbol: 'URTH', name: 'MSCI World' },
+    { symbol: 'QQQ', name: 'Nasdaq 100' },
+    { symbol: '^GDAXI', name: 'DAX' },
+    { symbol: 'DIA', name: 'DOW Jones' },
+    { symbol: 'SPY', name: 'S&P 500' },
+    { symbol: 'VGK', name: 'FTSE Europe' },
+    { symbol: 'EEM', name: 'Emerging Mkts' },
+    // Individual stocks
+    { symbol: 'AAPL', name: 'Apple' },
+    { symbol: 'MSFT', name: 'Microsoft' },
+    { symbol: 'NVDA', name: 'NVIDIA' },
+    { symbol: 'TSLA', name: 'Tesla' },
+    { symbol: 'AMZN', name: 'Amazon' },
+    { symbol: 'META', name: 'Meta' },
+    { symbol: 'GOOGL', name: 'Alphabet' },
+    { symbol: 'NFLX', name: 'Netflix' },
+];
+
+let tickerCache = { data: null, ts: 0 };
+let tickerFetchPromise = null;
+const TICKER_CACHE_MS = 5 * 60 * 1000; // 5 minutes
+
+async function fetchTickerQuotes() {
+    const now = Date.now();
+    if (tickerCache.data && now - tickerCache.ts < TICKER_CACHE_MS) {
+        return tickerCache.data;
+    }
+
+    // Prevent concurrent fetches — reuse in-flight request
+    if (tickerFetchPromise) return tickerFetchPromise;
+
+    tickerFetchPromise = (async () => {
+        try {
+            const symbols = TICKER_SYMBOLS.map(s => s.symbol).join(',');
+            const url = `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(symbols)}&range=1d&interval=1d`;
+
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+
+            if (!res.ok) throw new Error(`Yahoo API returned ${res.status}`);
+
+            const json = await res.json();
+            const results = [];
+
+            for (const entry of TICKER_SYMBOLS) {
+                const spark = json.spark?.result?.find(r => r.symbol === entry.symbol);
+                if (!spark) continue;
+
+                const meta = spark.response?.[0]?.meta;
+                if (!meta) continue;
+
+                const price = meta.regularMarketPrice;
+                const prevClose = meta.chartPreviousClose ?? meta.previousClose;
+                const currency = meta.currency || 'USD';
+
+                if (price == null || prevClose == null) continue;
+
+                const change = price - prevClose;
+                const pct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+
+                results.push({
+                    symbol: entry.symbol.replace('^', ''),
+                    name: entry.name,
+                    price: parseFloat(price.toFixed(2)),
+                    change: parseFloat(change.toFixed(2)),
+                    pct: parseFloat(pct.toFixed(2)),
+                    currency,
+                });
+            }
+
+            if (results.length > 0) {
+                tickerCache = { data: results, ts: Date.now() };
+            }
+            return results;
+        } finally {
+            tickerFetchPromise = null;
+        }
+    })();
+
+    return tickerFetchPromise;
+}
+
+app.get('/api/ticker', async (req, res) => {
+    try {
+        const data = await fetchTickerQuotes();
+        res.json(data);
+    } catch (err) {
+        console.error('[Ticker] Failed to fetch quotes:', err.message);
+        // Return cached data if available, even if stale
+        if (tickerCache.data) {
+            return res.json(tickerCache.data);
+        }
+        res.status(502).json({ error: 'Failed to fetch quotes' });
+    }
+});
+
 // ============== SOCKET HANDLERS ==============
 
 registerSocketHandlers(io);
