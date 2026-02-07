@@ -17,6 +17,31 @@ html, body {
     user-select: none;
 }
 
+/* Home button - always visible */
+#home-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid var(--accent-color, #fff);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    text-decoration: none;
+    z-index: 200;
+    transition: all 0.3s;
+}
+
+#home-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px var(--accent-color, #fff);
+    transform: scale(1.1);
+}
+
 /* Fullscreen video */
 #boot-video {
     position: fixed;
