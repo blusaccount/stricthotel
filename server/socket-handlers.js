@@ -13,6 +13,7 @@ import {
 
 import { getBalance, addBalance, deductBalance } from './currency.js';
 import { buyStock, sellStock, getPortfolioSnapshot, getAllPortfolioPlayerNames } from './stock-game.js';
+import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
 
 // ============== INPUT VALIDATION ==============
 
@@ -89,7 +90,9 @@ const PICTO_MAX_POINTS_PER_SEGMENT = 20;
 const pictoState = {
     strokes: [],
     inProgress: new Map(), // strokeId -> stroke
-    redoStacks: new Map()  // socketId -> stroke[]
+    redoStacks: new Map(), // socketId -> stroke[]
+    messages: [],          // recent messages for join replay
+    hydrated: false        // whether DB state has been loaded
 };
 
 function normalizePoint(point) {
@@ -425,11 +428,26 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
         } catch (err) { console.error('stock-get-leaderboard error:', err.message); } });
 
         // --- Pictochat Join ---
-        socket.on('picto-join', () => { try {
+        socket.on('picto-join', async () => { try {
             if (!checkRateLimit(socket.id)) return;
             socket.join(PICTO_ROOM);
+
+            // On first join (empty in-memory state), hydrate from DB
+            if (pictoState.strokes.length === 0 && !pictoState.hydrated) {
+                pictoState.hydrated = true;
+                const dbStrokes = await loadStrokes();
+                if (dbStrokes.length > 0) {
+                    pictoState.strokes = dbStrokes;
+                }
+                const dbMessages = await loadMessages();
+                if (dbMessages.length > 0) {
+                    pictoState.messages = dbMessages;
+                }
+            }
+
             socket.emit('picto-state', {
-                strokes: pictoState.strokes
+                strokes: pictoState.strokes,
+                messages: pictoState.messages || []
             });
         } catch (err) { console.error('picto-join error:', err.message); } });
 
@@ -497,7 +515,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
         } catch (err) { console.error('picto-stroke-segment error:', err.message); } });
 
         // --- Pictochat Stroke End ---
-        socket.on('picto-stroke-end', (data) => { try {
+        socket.on('picto-stroke-end', async (data) => { try {
             if (!checkRateLimit(socket.id, 10)) return;
             if (!data || typeof data !== 'object') return;
 
@@ -520,10 +538,12 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
                 size: stroke.size,
                 points: stroke.points
             });
+
+            await saveStroke(stroke);
         } catch (err) { console.error('picto-stroke-end error:', err.message); } });
 
         // --- Pictochat Shape ---
-        socket.on('picto-shape', (data) => { try {
+        socket.on('picto-shape', async (data) => { try {
             if (!checkRateLimit(socket.id, 8)) return;
             if (!data || typeof data !== 'object') return;
 
@@ -552,10 +572,12 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             redo.length = 0;
 
             io.to(PICTO_ROOM).emit('picto-shape', stroke);
+
+            await saveStroke(stroke);
         } catch (err) { console.error('picto-shape error:', err.message); } });
 
         // --- Pictochat Undo ---
-        socket.on('picto-undo', (data) => { try {
+        socket.on('picto-undo', async (data) => { try {
             if (!checkRateLimit(socket.id, 5)) return;
             if (!data || typeof data !== 'object') return;
 
@@ -571,10 +593,12 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
                 strokeId,
                 byId: socket.id
             });
+
+            await deleteStroke(strokeId);
         } catch (err) { console.error('picto-undo error:', err.message); } });
 
         // --- Pictochat Redo ---
-        socket.on('picto-redo', () => { try {
+        socket.on('picto-redo', async () => { try {
             if (!checkRateLimit(socket.id, 5)) return;
 
             const redo = getRedoStack(socket.id);
@@ -588,10 +612,12 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
                 stroke,
                 byId: socket.id
             });
+
+            await saveStroke(stroke);
         } catch (err) { console.error('picto-redo error:', err.message); } });
 
         // --- Pictochat Clear ---
-        socket.on('picto-clear', () => { try {
+        socket.on('picto-clear', async () => { try {
             if (!checkRateLimit(socket.id, 2)) return;
 
             pictoState.strokes = [];
@@ -601,20 +627,32 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             io.to(PICTO_ROOM).emit('picto-clear', {
                 byId: socket.id
             });
+
+            await clearStrokes();
         } catch (err) { console.error('picto-clear error:', err.message); } });
 
         // --- Pictochat Message ---
-        socket.on('picto-message', (text) => { try {
+        socket.on('picto-message', async (text) => { try {
             if (!checkRateLimit(socket.id, 6)) return;
             if (typeof text !== 'string') return;
             const message = text.replace(/[<>&]/g, '').slice(0, 200).trim();
             if (!message) return;
 
-            io.to(PICTO_ROOM).emit('picto-message', {
+            const payload = {
                 name: getPictoName(socket.id),
                 text: message,
                 timestamp: Date.now()
-            });
+            };
+
+            pictoState.messages.push(payload);
+            // Keep in-memory message list bounded
+            if (pictoState.messages.length > PICTO_MAX_MESSAGES) {
+                pictoState.messages.splice(0, pictoState.messages.length - PICTO_MAX_MESSAGES);
+            }
+
+            io.to(PICTO_ROOM).emit('picto-message', payload);
+
+            await saveMessage(payload.name, payload.text);
         } catch (err) { console.error('picto-message error:', err.message); } });
 
         // ============== SOUNDBOARD HANDLERS ==============
