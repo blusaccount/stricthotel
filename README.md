@@ -1,41 +1,41 @@
 # StrictHotel
 
-StrictHotel ist eine experimentelle Minigame-Sammlung im **neal.fun-inspirierten** Stil: schnelle, visuelle Web-Erlebnisse mit Multiplayer-Chaos und Nostalgie-Elementen.
+StrictHotel is an experimental minigame collection in a **neal.fun-inspired** style: fast, visual web experiences with multiplayer chaos and nostalgic flair.
 
 ## Highlights
-- Multiplayer Lobby und Rooms via Socket.IO
-- Maexchen (Wuerfel-Bluff) und Watchparty
-- Pictochat-artiges Doodle-Board in Lobby
-- Soundboard in Lobby
-- Nostalgiabait (Retro-Boot-Erlebnisse) im Bereich /nostalgiabait
-- Login-Schutz via Session + Passwort
+- Multiplayer lobby and rooms via Socket.IO
+- Maexchen (dice bluff) and Watchparty
+- Pictochat-style doodle board in the lobby
+- Lobby soundboard
+- Nostalgiabait (retro boot experiences) under /nostalgiabait
+- Login protection via session + password
 
-## Repo-Struktur
-- **Server**: `server.js` startet [server/index.js](server/index.js) (Express + Socket.IO)
-- **Public UI**: [public](public) (Landing, Login, Nostalgiabait, Lobby-Features)
-- **Games**: [games](games) (z. B. Maexchen, Watchparty)
-- **Shared**: [shared](shared) (Chat, Lobby, Avatare, Creator, CSS, Audio)
-- **Bot**: [bot](bot) (Discord Bot + Commands)
+## Repo Structure
+- **Server**: `server.js` starts [server/index.js](server/index.js) (Express + Socket.IO)
+- **Public UI**: [public](public) (Landing, Login, Nostalgiabait, Lobby features)
+- **Games**: [games](games) (e.g. Maexchen, Watchparty)
+- **Shared**: [shared](shared) (Chat, Lobby, Avatars, Creator, CSS, Audio)
+- **Bot**: [bot](bot) (Discord bot + commands)
 
-## LLM Agent Hinweise
-Wenn LLM Agents im Repo arbeiten, bitte diese Dateien verwenden:
-- [AGENTS.md](AGENTS.md): Einstieg und Arbeitsregeln
-- [LLM_AGENT_GUIDE.md](LLM_AGENT_GUIDE.md): Repo-Mentalmodell, Do/Don'ts
-- [EVENTS.md](EVENTS.md): Socket-Event Uebersicht
-- [PLANS.md](PLANS.md): ExecPlan Vorlage fuer groessere Tasks
-- [HANDOFF.md](HANDOFF.md): Kurzprotokoll von Aenderungen und Risiken
+## LLM Agent Notes
+When LLM agents work in this repo, use these files:
+- [AGENTS.md](AGENTS.md): entry point and rules
+- [LLM_AGENT_GUIDE.md](LLM_AGENT_GUIDE.md): repo mental model, do/don'ts
+- [EVENTS.md](EVENTS.md): socket event overview
+- [PLANS.md](PLANS.md): ExecPlan template for larger tasks
+- [HANDOFF.md](HANDOFF.md): short log of changes and risks
 
-## Lokal starten
+## Run Locally
 ```
 npm install
 npm run dev
 ```
-Server startet unter `http://localhost:3000`.
+Server runs at `http://localhost:3000`.
 
-## Konfiguration (Env)
+## Configuration (Env)
 - `SESSION_SECRET` (required in production)
-- `SITE_PASSWORD` (Login-Passwort, default: ADMIN)
-- `CLIENT_ID` und `GUILD_ID` fuer Discord Bot (optional)
+- `SITE_PASSWORD` (login password, default: ADMIN)
+- `CLIENT_ID` and `GUILD_ID` for Discord bot (optional)
 
-## Kurz gesagt
-Dieses Repository buendelt eine spielbare Website und Multiplayer-Features mit Fokus auf kreative Mini-Games, Social-Interaktion und stilisierte Retro-Atmosphaere.
+## In Short
+This repository bundles a playable website and multiplayer features with a focus on creative minigames, social interaction, and a stylized retro atmosphere.

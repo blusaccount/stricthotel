@@ -1,63 +1,63 @@
 # HANDOFF - Code Review Fixes
 
-## Was wurde gemacht
+## What Was Done
 
 ### Bugfixes
 
-**WatchParty: game-started Payload nutzen** (`games/watchparty/js/watchparty.js`)
-- `game-started` Handler empfängt jetzt `data` Parameter
-- Player-Bar wird sofort mit Spielern aus der Payload gerendert (statt leer bis zum nächsten room-update)
+**WatchParty: use game-started payload** (`games/watchparty/js/watchparty.js`)
+- `game-started` handler now receives a `data` parameter
+- Player bar renders immediately from payload (instead of staying empty until the next room-update)
 
-**WatchParty: Host-Wechsel Sync** (`games/watchparty/js/watchparty.js`)
-- Bei `room-update` wird geprüft ob sich der Host geändert hat (`wasHost` vs `isHost`)
-- Neuer Host startet automatisch den Sync-Interval
+**WatchParty: host change sync** (`games/watchparty/js/watchparty.js`)
+- On `room-update`, checks if the host changed (`wasHost` vs `isHost`)
+- New host automatically starts the sync interval
 
-**Mäxchen Join-Limit korrigiert** (`server/socket-handlers.js`)
-- War: Watch Party 6, Mäxchen 4 — UI sagte "2-6 Spieler"
-- Jetzt: einheitlich max 6 Spieler für alle Spieltypen
+**Maexchen join limit fixed** (`server/socket-handlers.js`)
+- Was: Watchparty 6, Maexchen 4, while UI said "2-6 players"
+- Now: unified max 6 players for all game types
 
-**Pictochat Resize** (`public/pictochat.js`)
-- `window.addEventListener('resize', resizeCanvas)` hinzugefügt
-- Canvas wird bei Fenster-Resize korrekt neu gerendert
+**Pictochat resize** (`public/pictochat.js`)
+- Added `window.addEventListener('resize', resizeCanvas)`
+- Canvas re-renders on window resize
 
-**XSS-Escaping in Lobby** (`shared/js/lobby.js`)
-- `escapeHtml()` Helper hinzugefügt
-- `renderOnlinePlayers`: `p.name` und `p.character.dataURL` werden escaped
-- `renderLobbies`: `lobby.hostName` und `lobby.code` werden escaped
+**XSS escaping in lobby** (`shared/js/lobby.js`)
+- Added `escapeHtml()` helper
+- `renderOnlinePlayers`: `p.name` and `p.character.dataURL` are escaped
+- `renderLobbies`: `lobby.hostName` and `lobby.code` are escaped
 
 ### Refactoring
 
-**removePlayerFromRoom Helper** (`server/room-manager.js`)
-- Neue Funktion `removePlayerFromRoom(io, socketId, room)` extrahiert
-- Enthält die gesamte Leave-Logik: Game-State-Cleanup (WatchParty + Mäxchen), Spieler entfernen, Host reassign, Room löschen, Broadcasts
-- `leave-room` Handler: von ~75 Zeilen auf 4 Zeilen reduziert
-- `disconnect` Handler: von ~70 Zeilen auf ~10 Zeilen reduziert
-- Eliminiert ~120 Zeilen duplizierter Code
+**removePlayerFromRoom helper** (`server/room-manager.js`)
+- Extracted new function `removePlayerFromRoom(io, socketId, room)`
+- Includes all leave logic: game-state cleanup (WatchParty + Maexchen), player removal, host reassignment, room deletion, broadcasts
+- `leave-room` handler reduced from ~75 lines to 4
+- `disconnect` handler reduced from ~70 lines to ~10
+- Eliminated ~120 lines of duplicated code
 
-**socketToRoom Lookup Map** (`server/room-manager.js`)
-- Neue `Map<socketId, roomCode>` für O(1) Room-Lookup
-- `getRoom()` nutzt jetzt den Lookup statt über alle Rooms zu iterieren
-- Map wird bei create-room, join-room, removePlayerFromRoom und im Cleanup-Interval gepflegt
-- Stale Entries werden automatisch bereinigt
+**socketToRoom lookup map** (`server/room-manager.js`)
+- New `Map<socketId, roomCode>` for O(1) room lookup
+- `getRoom()` now uses lookup instead of iterating all rooms
+- Map maintained on create-room, join-room, removePlayerFromRoom, and cleanup interval
+- Stale entries are automatically cleaned up
 
-**.env.example vervollständigt**
-- `CLIENT_ID` und `GUILD_ID` hinzugefügt (waren nur in `bot/.env.example`)
+**.env.example completed**
+- Added `CLIENT_ID` and `GUILD_ID` (previously only in `bot/.env.example`)
 
-## Geänderte Dateien
-- `server/room-manager.js` — socketToRoom Map, removePlayerFromRoom Helper, game-logic Import
-- `server/socket-handlers.js` — socketToRoom Import + set bei create/join, vereinfachte leave/disconnect Handler, Join-Limit Fix
-- `server/index.js` — socketToRoom Import + Cleanup
-- `games/watchparty/js/watchparty.js` — game-started Payload, Host-Wechsel Sync
-- `public/pictochat.js` — resize Listener
-- `shared/js/lobby.js` — escapeHtml Helper + Nutzung
+## Files Changed
+- `server/room-manager.js` — socketToRoom map, removePlayerFromRoom helper, game-logic import
+- `server/socket-handlers.js` — socketToRoom import + set on create/join, simplified leave/disconnect handlers, join limit fix
+- `server/index.js` — socketToRoom import + cleanup
+- `games/watchparty/js/watchparty.js` — game-started payload, host change sync
+- `public/pictochat.js` — resize listener
+- `shared/js/lobby.js` — escapeHtml helper + usage
 - `.env.example` — CLIENT_ID, GUILD_ID
 
-## Was nicht geändert wurde
-- Spiellogik (game-logic.js unverändert)
-- Discord Bot
+## Not Changed
+- Game logic (game-logic.js unchanged)
+- Discord bot
 - Frontend HTML/CSS
-- Pictochat Server-Handler (clear/cursor Limits bleiben — nur für Freunde)
+- Pictochat server handlers (clear/cursor limits unchanged)
 
-## Was ist offen
-- CSS könnte in Module aufgeteilt werden (theme.css ist 2200 Zeilen)
-- `getOpenLobbies()` ist weiterhin O(n) über alle Rooms (kein Index nach gameType)
+## Open Items
+- CSS could be split into modules (theme.css is 2200 lines)
+- `getOpenLobbies()` is still O(n) over all rooms (no index by gameType)
