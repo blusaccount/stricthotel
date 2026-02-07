@@ -4,6 +4,9 @@
 
 import { getBalance, addBalance, deductBalance } from './currency.js';
 
+// Small tolerance for floating-point comparison when selling shares
+const FP_TOLERANCE = 1.0001;
+
 // portfolios: playerName -> Map<symbol, { shares: number, avgCost: number }>
 const portfolios = new Map();
 
@@ -77,7 +80,7 @@ export function sellStock(playerName, symbol, price, amount) {
     }
 
     const sharesToSell = amount / price;
-    if (sharesToSell > holding.shares * 1.0001) { // tiny tolerance for fp
+    if (sharesToSell > holding.shares * FP_TOLERANCE) { // tolerance for floating-point
         return { ok: false, error: 'Not enough shares' };
     }
 
