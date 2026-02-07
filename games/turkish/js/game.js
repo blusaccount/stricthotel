@@ -20,14 +20,45 @@
 
     // ===== Fetch Daily Lesson =====
     async function loadLesson() {
+        setLoadError('');
+        setStartButtonEnabled(false);
+
         try {
             const res = await fetch('/api/turkish/daily');
+            if (!res.ok) {
+                const payload = await res.json().catch(function () { return null; });
+                const message = payload && payload.message ? payload.message : 'Could not load lesson.';
+                throw new Error(message);
+            }
+
             lesson = await res.json();
             renderLesson();
+            setStartButtonEnabled(true);
         } catch (err) {
+            lesson = null;
             $('lesson-topic').textContent = 'Could not load lesson';
+            $('lesson-day').textContent = 'Please try again.';
+            $('word-list').innerHTML = '';
+            setLoadError(err && err.message ? err.message : 'Could not load lesson.');
+            setStartButtonEnabled(false);
             console.error('Failed to load lesson:', err);
         }
+    }
+
+
+    function setLoadError(message) {
+        const box = $('lesson-error');
+        const text = $('lesson-error-message');
+        const hasMessage = !!message;
+
+        if (text) text.textContent = message || '';
+        if (box) box.classList.toggle('active', hasMessage);
+    }
+
+    function setStartButtonEnabled(enabled) {
+        const btn = $('btn-start-quiz');
+        if (!btn) return;
+        btn.disabled = !enabled;
     }
 
     function renderLesson() {
@@ -48,6 +79,8 @@
 
     // ===== Quiz =====
     function startQuiz() {
+        if (!lesson) return;
+
         quiz = lesson.quiz;
         currentQ = 0;
         score = 0;
@@ -157,6 +190,7 @@
 
     // ===== Event Listeners =====
     $('btn-start-quiz').addEventListener('click', startQuiz);
+    $('btn-retry-lesson').addEventListener('click', loadLesson);
     $('btn-replay').addEventListener('click', function () {
         showScreen('learn');
     });
