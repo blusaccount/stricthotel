@@ -1,45 +1,51 @@
-# HANDOFF - Character Creator auf Hauptseite
+# HANDOFF - Socket.IO Security Hardening
 
 ## Was wurde gemacht
 
-### shared/js/creator.js angepasst
-- `MaexchenApp.$` Dependency ist jetzt optional — Creator funktioniert auch ohne `window.MaexchenApp`
-- localStorage Key von `maexchen-pixels` auf `stricthotel-character` geändert (global geteilt)
-- Neuer Alias `window.StrictHotelCreator` neben `window.MaexchenCreator` (Abwärtskompatibilität)
+### server.js - Input-Validierung
+- `sanitizeName()`: Entfernt `<>&"'/`, trimmt, max 20 Zeichen
+- `validateCharacter()`: Prüft Objekt-Typ, max 2KB JSON, nur `pixels`/`dataURL` Keys erlaubt, dataURL muss mit `data:image/` beginnen
+- `validateRoomCode()`: Nur A-Z0-9, max 4 Zeichen
+- `validateGameType()`: Whitelist (`maexchen`, `lobby`), Fallback auf `maexchen`
+- Alle 13 Socket-Handler nutzen diese Validierungen
 
-### shared/js/lobby.js angepasst
-- Lädt gespeicherten Namen aus `stricthotel-name` in das Namensfeld vor
-- Speichert den Namen bei `registerPlayer()` in `stricthotel-name`
+### server.js - Rate Limiting
+- Token-Bucket pro Socket-ID (Map-basiert)
+- `checkRateLimit(socketId, maxPerSecond)` - Default: 10/Sekunde
+- Strengere Limits für: Chat (5/s), Emotes (5/s), Drawings (3/s)
+- Automatische Cleanup der Rate-Limiter-Map
 
-### public/index.html erweitert
-- Avatar-Bar oben: Pixel-Art-Vorschau, Namensfeld, "Charakter erstellen/ändern"-Button
-- Online-Spieler-Sektion unten: zeigt alle verbundenen Spieler mit Avatar und Status
-- Socket.IO Client + Creator + lobby.js eingebunden
-- Bestehendes Retro-Design beibehalten, Spielekarten unverändert
+### server.js - Error Handling
+- Alle 13 `socket.on()` Handler in try-catch gewrappt
+- Fehler werden geloggt mit Handler-Name (`console.error('handler-name error:', err.message)`)
+- User-facing Fehler werden per `socket.emit('error', ...)` zurückgegeben wo sinnvoll
+- setTimeout-Callbacks ebenfalls in try-catch
 
-### public/lobby.js erstellt (neu)
-- Lädt gespeicherten Character aus `stricthotel-character` via `StrictHotelCreator`
-- Lädt gespeicherten Namen aus `stricthotel-name`
-- Avatar-Vorschau: zeigt Pixel-Art oder Placeholder
-- "Charakter erstellen"-Button öffnet den Creator, speichert und registriert
-- Namensfeld: speichert bei Änderung, registriert bei `change`
-- Socket: `register-player` mit `game: "lobby"`
-- `online-players` Event: rendert Spielerliste mit Avatar + Name + Status
-- Re-Registrierung bei Socket-Reconnect
+### server.js - Zusätzliche Sicherheit
+- Doppelte Room-Erstellung verhindert (prüft `getRoom()` vor create)
+- Doppelter Room-Join verhindert (prüft ob Socket schon im Raum)
+- `announce`: Prüft `typeof value !== 'number' || !Number.isInteger(value)`
+- `drawing-note`: dataURL max 70KB, muss mit `data:image/` starten, target max 20 Zeichen
+- `chat-message`: HTML-Entities entfernt, max 100 Zeichen
+- `emote`: max 50 Zeichen String
 
-### Nicht geändert
-- server.js (register-player Event unterstützt `game: "lobby"` bereits)
-- Nostalgiabait (keine Änderungen)
-- games/maexchen/index.html (unverändert)
-- Canvas-Versionen der Boot-Sequenzen
+### server.js - Periodischer Cleanup (alle 5 Min)
+- Prüft ob Socket-IDs in `onlinePlayers` noch connected sind
+- Entfernt verwaiste Spieler aus Rooms
+- Löscht leere Rooms
+- Reassigned Host wenn alter Host disconnected
+- Cleanup der Rate-Limiter-Map
+- Loggt Anzahl entfernter Einträge
 
-## Was funktioniert
-- Character auf Hauptseite erstellen → wird in localStorage gespeichert
-- Name auf Hauptseite eingeben → wird in localStorage gespeichert
-- In Mäxchen wechseln → Name und Character werden automatisch vorgeladen
-- Character in Mäxchen erstellen → wird auch auf der Hauptseite angezeigt
-- Online-Spieler werden global auf allen Seiten angezeigt
-- Spieler auf der Hauptseite registrieren sich als `game: "lobby"`
+## Geänderte Datei
+- `server.js` (einzige Datei)
+
+## Was nicht geändert wurde
+- Client-Code (public/, shared/, games/)
+- Discord Bot
+- Statische Dateien
 
 ## Was ist offen
-- Character-Edit in der Avatar-Bar ist nur über den Button möglich (kein Klick auf den Avatar selbst)
+- Client-seitige Validierung (optional, Server validiert bereits alles)
+- CORS-Konfiguration für Socket.IO (aktuell offen)
+- Authentifizierung/Sessions (aktuell anonym)
