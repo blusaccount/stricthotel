@@ -20,6 +20,23 @@
             --ds-negative: #555555;
             --ds-highlight: #cccccc;
             --ds-radius: 0px;
+            --ds-divider: #ccc;
+            --ds-divider-light: #eee;
+            --ds-overlay: rgba(0,0,0,0.5);
+        }
+
+        [data-theme="dark"] {
+            --ds-bg: #1a1a2e;
+            --ds-surface: #16213e;
+            --ds-border: #e0e0e0;
+            --ds-text: #eaeaea;
+            --ds-text-dim: #a0a0a0;
+            --ds-positive: #eaeaea;
+            --ds-negative: #a0a0a0;
+            --ds-highlight: #0f3460;
+            --ds-divider: #2a2a4a;
+            --ds-divider-light: #222244;
+            --ds-overlay: rgba(0,0,0,0.7);
         }
 
         body {
@@ -144,7 +161,7 @@
 
         .holdings-table td {
             padding: 6px 8px;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid var(--ds-divider);
         }
 
         .holdings-table .symbol { font-weight: 700; }
@@ -219,7 +236,7 @@
             padding: 8px 12px;
             cursor: pointer;
             font-size: 8px;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid var(--ds-divider);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -320,7 +337,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.5);
+            background: var(--ds-overlay);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -507,7 +524,7 @@
         .leaderboard-detail {
             display: none;
             padding: 0 10px 8px;
-            border-top: 1px dashed #ccc;
+            border-top: 1px dashed var(--ds-divider);
         }
         .leaderboard-card.expanded .leaderboard-detail {
             display: block;
@@ -523,11 +540,11 @@
             font-size: 6px;
             letter-spacing: 1px;
             padding: 4px 6px;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid var(--ds-divider);
         }
         .leaderboard-detail-table td {
             padding: 3px 6px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--ds-divider-light);
         }
 
         /* ===== Responsive ===== */
@@ -543,10 +560,39 @@
             .market-grid { grid-template-columns: 1fr; }
         }
 
+        /* ===== Theme Toggle ===== */
+        .theme-toggle {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            z-index: 1000;
+        }
+
+        .theme-toggle-btn {
+            background: var(--ds-surface);
+            border: 2px solid var(--ds-border);
+            color: var(--ds-text);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            transition: all 0.15s;
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--ds-highlight);
+            box-shadow: 3px 3px 0 var(--ds-border);
+        }
+
         /* ===== Ambience Music ===== */
         .ambience-control {
             position: fixed;
-            bottom: 44px;
+            bottom: 60px;
             right: 12px;
             z-index: 1000;
         }
@@ -593,6 +639,13 @@
 <!-- Hidden YouTube player for background music -->
 <div class="ambience-yt-container" aria-hidden="true">
     <div id="ambience-yt-player"></div>
+</div>
+
+<!-- Theme toggle button -->
+<div class="theme-toggle">
+    <button class="theme-toggle-btn" id="theme-toggle" type="button" title="Toggle Dark/Light Mode">
+        <span id="theme-toggle-icon">💡</span>
+    </button>
 </div>
 
 <!-- Ambience mute button -->
@@ -839,6 +892,41 @@
         try { switchSound.currentTime = 0; switchSound.play().catch(function(){}); } catch(ex) {}
         setTimeout(function () { window.location.href = href; }, 250);
     });
+})();
+</script>
+<!-- Dark/Light Mode Toggle -->
+<script>
+(function () {
+    'use strict';
+
+    var STORAGE_THEME = 'stocks-theme';
+    var toggleBtn = document.getElementById('theme-toggle');
+    var toggleIcon = document.getElementById('theme-toggle-icon');
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        if (toggleIcon) {
+            toggleIcon.textContent = theme === 'dark' ? '🔆' : '💡';
+        }
+        if (toggleBtn) {
+            toggleBtn.title = theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+        }
+    }
+
+    function toggleTheme() {
+        var current = localStorage.getItem(STORAGE_THEME) || 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(STORAGE_THEME, next);
+        applyTheme(next);
+    }
+
+    // Restore saved theme on load
+    var saved = localStorage.getItem(STORAGE_THEME) || 'light';
+    applyTheme(saved);
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleTheme);
+    }
 })();
 </script>
 </body>
