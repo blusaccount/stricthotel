@@ -72,8 +72,8 @@ function checkRateLimit(socketId, maxPerSecond = 10) {
 
 const SOUNDBOARD_ROOM = 'lobby-soundboard';
 const SOUNDBOARD_VALID_IDS = new Set([
-    'airhorn', 'bruh', 'crickets', 'dramatic', 'fart', 'fail',
-    'laugh', 'mgs-alert', 'nope', 'oof', 'sad-trombone', 'surprise'
+    'anatolia', 'elgato', 'fahh', 'massenhausen', 'plug',
+    'reverbfart', 'rizz', 'seyuh', 'vineboom'
 ]);
 
 // ============== PICTOCHAT STATE ==============

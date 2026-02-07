@@ -18,18 +18,15 @@
     // ============== SOUND DEFINITIONS ==============
 
     var SOUNDS = [
-        { id: 'airhorn',      emoji: '\uD83D\uDCEF', label: 'Airhorn' },
-        { id: 'bruh',         emoji: '\uD83D\uDE10', label: 'Bruh' },
-        { id: 'crickets',     emoji: '\uD83E\uDD97', label: 'Crickets' },
-        { id: 'dramatic',     emoji: '\uD83D\uDE31', label: 'Dramatic' },
-        { id: 'fart',         emoji: '\uD83D\uDCA8', label: 'Fart' },
-        { id: 'fail',         emoji: '\u274C',       label: 'Fail' },
-        { id: 'laugh',        emoji: '\uD83D\uDE02', label: 'Laugh' },
-        { id: 'mgs-alert',    emoji: '\u2757',       label: 'MGS Alert' },
-        { id: 'nope',         emoji: '\uD83D\uDE45', label: 'Nope' },
-        { id: 'oof',          emoji: '\uD83D\uDC80', label: 'Oof' },
-        { id: 'sad-trombone', emoji: '\uD83C\uDFBA', label: 'Sad Trombone' },
-        { id: 'surprise',     emoji: '\uD83C\uDF89', label: 'Surprise' }
+        { id: 'vineboom',     emoji: '\uD83D\uDCA5', label: 'Vine Boom',     file: 'vineboom.mp3' },
+        { id: 'rizz',         emoji: '\uD83D\uDE0F', label: 'Rizz',          file: 'rizz.ogg' },
+        { id: 'fahh',         emoji: '\uD83D\uDE29', label: 'FAHH',          file: 'fahh.ogg' },
+        { id: 'reverbfart',   emoji: '\uD83D\uDCA8', label: 'Reverb Fart',   file: 'reverbfart.mp3' },
+        { id: 'elgato',       emoji: '\uD83D\uDC31', label: 'El Gato',       file: 'elgato.mp3' },
+        { id: 'seyuh',        emoji: '\uD83D\uDE4C', label: 'Seyuh',         file: 'seyuh.ogg' },
+        { id: 'anatolia',     emoji: '\uD83C\uDDFA\uD83C\uDDF7', label: 'Anatolia', file: 'anatolia.mp3' },
+        { id: 'massenhausen', emoji: '\uD83C\uDFD8\uFE0F',  label: 'Massenhausen', file: 'massenhausen.ogg' },
+        { id: 'plug',         emoji: '\uD83D\uDD0C', label: 'Plug',          file: 'plug.ogg' }
     ];
 
     var AUDIO_BASE = '/shared/audio/soundboard/';
@@ -60,7 +57,7 @@
 
     function preloadSounds() {
         SOUNDS.forEach(function (s) {
-            var audio = new Audio(AUDIO_BASE + s.id + '.wav');
+            var audio = new Audio(AUDIO_BASE + s.file);
             audio.preload = 'auto';
             audioCache[s.id] = audio;
         });
