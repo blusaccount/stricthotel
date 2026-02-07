@@ -5,13 +5,14 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
-let yahooFinance = null;
+let yahooFinancePromise = null;
 async function getYahooFinance() {
-    if (!yahooFinance) {
-        const YahooFinance = (await import('yahoo-finance2')).default;
-        yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+    if (!yahooFinancePromise) {
+        yahooFinancePromise = import('yahoo-finance2').then(
+            m => new m.default({ suppressNotices: ['yahooSurvey'] })
+        );
     }
-    return yahooFinance;
+    return yahooFinancePromise;
 }
 
 import { rooms, onlinePlayers, socketToRoom, broadcastOnlinePlayers, broadcastLobbies } from './room-manager.js';
