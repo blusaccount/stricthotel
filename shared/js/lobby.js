@@ -345,7 +345,8 @@
                 const original = btn.textContent;
                 btn.textContent = '✓ Link kopiert!';
                 setTimeout(() => { btn.textContent = original; }, 2000);
-            }).catch(() => {
+            }).catch((err) => {
+                console.warn('Clipboard write failed:', err);
                 // Fallback: show URL for manual copy
                 prompt('Einladungslink:', url);
             });
