@@ -25,6 +25,8 @@ SESSION_SECRET=replace-with-a-long-random-string
 
 Optionally adjust `SITE_PASSWORD` (default: `STRICT`).
 
+> **Production note:** The default PostgreSQL password in `docker-compose.yml` is `stricthotel`. For internet-facing deployments, change `POSTGRES_PASSWORD` to a strong, unique value.
+
 ## 2. Start
 
 ```bash
@@ -46,7 +48,7 @@ curl http://localhost:3000/health
 You should see:
 
 ```json
-{"status":"ok","uptime":5.23,"players":0,"rooms":0,"version":"1.0.0"}
+{"status":"ok","version":"1.0.0","uptime":5.23,"players":0,"rooms":0}
 ```
 
 Open **http://localhost:3000** in your browser and log in with your `SITE_PASSWORD`.
