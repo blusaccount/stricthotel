@@ -105,7 +105,7 @@
     function updateMuteUI() {
         if (!muteBtn || !muteIcon) return;
         muteBtn.classList.toggle('muted', isMuted);
-        muteIcon.textContent = isMuted ? '\uD83D\uDD07' : '\uD83C\uDFB5';
+        muteIcon.textContent = isMuted ? '🔇' : '🎵';
     }
 
     // ============== USER INTERACTION GATE ==============
