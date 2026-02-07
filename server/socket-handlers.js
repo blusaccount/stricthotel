@@ -697,7 +697,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
 
             // Enforce uniform bet: first non-zero bet sets the required amount
             if (amount > 0) {
-                if (room.requiredBet == null || room.requiredBet === 0) {
+                if (room.requiredBet === undefined || room.requiredBet === 0) {
                     room.requiredBet = amount;
                 } else if (amount !== room.requiredBet) {
                     socket.emit('error', { message: `Alle müssen ${room.requiredBet} Coins setzen!` });
@@ -714,9 +714,11 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, yahooFinance } =
             room.bets[socket.id] = amount;
 
             // If all non-zero bets are removed, reset requiredBet
-            const anyBets = room.players.some(p => (room.bets[p.socketId] || 0) > 0);
-            if (!anyBets) {
-                room.requiredBet = 0;
+            if (amount === 0) {
+                const anyBets = room.players.some(p => (room.bets[p.socketId] || 0) > 0);
+                if (!anyBets) {
+                    room.requiredBet = 0;
+                }
             }
 
             // Broadcast updated bets to room
