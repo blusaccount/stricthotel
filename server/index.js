@@ -5,6 +5,8 @@ import http from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import YahooFinance from 'yahoo-finance2';
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 import { rooms, onlinePlayers, socketToRoom, broadcastOnlinePlayers, broadcastLobbies } from './room-manager.js';
 import { registerSocketHandlers, cleanupRateLimiters } from './socket-handlers.js';
@@ -129,37 +131,26 @@ async function fetchTickerQuotes() {
 
     tickerFetchPromise = (async () => {
         try {
-            const symbols = TICKER_SYMBOLS.map(s => s.symbol).join(',');
-            const url = `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${encodeURIComponent(symbols)}&range=1d&interval=1d`;
+            const symbols = TICKER_SYMBOLS.map(s => s.symbol);
+            const quotes = await yahooFinance.quote(symbols);
 
-            const res = await fetch(url, {
-                headers: { 'User-Agent': 'Mozilla/5.0' }
-            });
-
-            if (!res.ok) throw new Error(`Yahoo API returned ${res.status}`);
-
-            const json = await res.json();
+            const nameMap = new Map(TICKER_SYMBOLS.map(s => [s.symbol, s.name]));
             const results = [];
 
-            for (const entry of TICKER_SYMBOLS) {
-                const spark = json.spark?.result?.find(r => r.symbol === entry.symbol);
-                if (!spark) continue;
+            const quoteList = Array.isArray(quotes) ? quotes : [quotes];
 
-                const meta = spark.response?.[0]?.meta;
-                if (!meta) continue;
+            for (const q of quoteList) {
+                if (!q || q.regularMarketPrice == null) continue;
 
-                const price = meta.regularMarketPrice;
-                const prevClose = meta.chartPreviousClose ?? meta.previousClose;
-                const currency = meta.currency || 'USD';
-
-                if (price == null || prevClose == null) continue;
-
-                const change = price - prevClose;
-                const pct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+                const price = q.regularMarketPrice;
+                const change = q.regularMarketChange ?? 0;
+                const pct = q.regularMarketChangePercent ?? 0;
+                const currency = q.currency || 'USD';
+                const rawSymbol = q.symbol || '';
 
                 results.push({
-                    symbol: entry.symbol.replace('^', ''),
-                    name: entry.name,
+                    symbol: rawSymbol.replace('^', ''),
+                    name: nameMap.get(rawSymbol) || q.shortName || rawSymbol.replace('^', ''),
                     price: parseFloat(price.toFixed(2)),
                     change: parseFloat(change.toFixed(2)),
                     pct: parseFloat(pct.toFixed(2)),
