@@ -30,16 +30,6 @@
 
 ## Was ist offen
 
-### MP4-Dateien fehlen!
-Es wurden **keine MP4-Dateien** in `userinput/` gefunden — nur MP3s (Audio) und PNGs. Die Boot-Videos müssen noch beschafft und platziert werden:
-- `public/nostalgiabait/ps2/boot.mp4`
-- `public/nostalgiabait/gamecube/boot.mp4`
-
-Sobald die MP4s dort liegen, funktioniert der Player sofort. Ohne sie wird der "VIDEO NOT AVAILABLE" Fallback angezeigt.
-
-### Optional: Komprimierung
-Falls die MP4s >50MB sind, vor dem Commit komprimieren:
-```bash
-ffmpeg -i input.mp4 -c:v libx264 -crf 23 -c:a aac -b:a 128k output.mp4
-```
-GitHub-Limit: 100MB pro Datei.
+Nichts — alles abgeschlossen. Boot-Videos wurden hinzugefügt:
+- `public/nostalgiabait/ps2/boot.mp4` (607 KB)
+- `public/nostalgiabait/gamecube/boot.mp4` (223 KB)
