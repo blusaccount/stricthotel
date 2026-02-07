@@ -22,13 +22,13 @@
 
     // Restore saved settings
     function restoreSettings() {
-        var saved = localStorage.getItem(STORAGE_MUTE);
+        const saved = localStorage.getItem(STORAGE_MUTE);
         if (saved === 'true') {
             isMuted = true;
         }
-        var savedVol = localStorage.getItem(STORAGE_VOL);
+        const savedVol = localStorage.getItem(STORAGE_VOL);
         if (savedVol !== null) {
-            var parsed = parseFloat(savedVol);
+            const parsed = parseFloat(savedVol);
             if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
                 volume = parsed;
             }
@@ -284,9 +284,9 @@
 
     // Update mute button UI
     function updateMuteUI() {
-        var btn = document.getElementById('ambient-mute');
+        const btn = document.getElementById('ambient-mute');
         if (!btn) return;
-        var icon = btn.querySelector('.ambient-mute-icon');
+        const icon = btn.querySelector('.ambient-mute-icon');
         if (!icon) return;
         btn.classList.toggle('muted', isMuted);
         icon.textContent = isMuted ? '🔇' : '🔊';
@@ -294,8 +294,8 @@
 
     // Bind volume slider and mute button if present
     function bindControls() {
-        var btn = document.getElementById('ambient-mute');
-        var slider = document.getElementById('ambient-volume');
+        const btn = document.getElementById('ambient-mute');
+        const slider = document.getElementById('ambient-volume');
 
         if (btn) {
             btn.addEventListener('click', function () {
