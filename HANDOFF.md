@@ -1,35 +1,45 @@
-# HANDOFF - Nostalgiabait Video Player
+# HANDOFF - Character Creator auf Hauptseite
 
 ## Was wurde gemacht
 
-### Shared Player-Modul
-- `public/nostalgiabait/shared/player.css` — Fullscreen-Player-Styles: schwarzer Hintergrund, fixed Video mit `object-fit: contain`, pulsierendes "CLICK TO START" Overlay, Back/Replay-Buttons (initial hidden, `.visible` zeigt sie), responsive bis 400px, Mobile Touch-Fixes.
-- `public/nostalgiabait/shared/player.js` — IIFE-Player-Logik: Click/Touch-to-Start, ended → Buttons zeigen, Replay (currentTime=0 + play), Back → /nostalgiabait/, Keyboard (Space=Start/Replay, Escape=Back), Contextmenu unterdrückt, Error-Handler mit "VIDEO NOT AVAILABLE" Fallback.
+### shared/js/creator.js angepasst
+- `MaexchenApp.$` Dependency ist jetzt optional — Creator funktioniert auch ohne `window.MaexchenApp`
+- localStorage Key von `maexchen-pixels` auf `stricthotel-character` geändert (global geteilt)
+- Neuer Alias `window.StrictHotelCreator` neben `window.MaexchenCreator` (Abwärtskompatibilität)
 
-### Konsolen-Seiten (Video-Player)
-- `public/nostalgiabait/ps2/index.html` — "Playsphere 2 - Nostalgiabait", Akzentfarbe `#4488ff`, lädt `boot.mp4` aus gleichem Verzeichnis.
-- `public/nostalgiabait/gamecube/index.html` — "Cubesystem 2001 - Nostalgiabait", Akzentfarbe `#7b68ee`, lädt `boot.mp4` aus gleichem Verzeichnis.
+### shared/js/lobby.js angepasst
+- Lädt gespeicherten Namen aus `stricthotel-name` in das Namensfeld vor
+- Speichert den Namen bei `registerPlayer()` in `stricthotel-name`
 
-### Geänderte Dateien
-- `public/nostalgiabait/index.html` — Links zeigen jetzt auf `/nostalgiabait/ps2/` und `/nostalgiabait/gamecube/` (statt ps2.html / gamecube.html).
-- `public/index.html` — Nostalgiabait-Beschreibung geändert zu "Erinnerungen an Startup-Screens vergangener Konsolen-Ären."
-- `.gitignore` — `userinput/` hinzugefügt.
+### public/index.html erweitert
+- Avatar-Bar oben: Pixel-Art-Vorschau, Namensfeld, "Charakter erstellen/ändern"-Button
+- Online-Spieler-Sektion unten: zeigt alle verbundenen Spieler mit Avatar und Status
+- Socket.IO Client + Creator + lobby.js eingebunden
+- Bestehendes Retro-Design beibehalten, Spielekarten unverändert
 
-### Nicht geändert (wie angewiesen)
-- `ps2/ps2.html`, `ps2.css`, `ps2.js` (Canvas-Version bleibt erhalten)
-- `gamecube/gamecube.html`, `gamecube.css`, `gamecube.js` (Canvas-Version bleibt erhalten)
-- `server.js`
+### public/lobby.js erstellt (neu)
+- Lädt gespeicherten Character aus `stricthotel-character` via `StrictHotelCreator`
+- Lädt gespeicherten Namen aus `stricthotel-name`
+- Avatar-Vorschau: zeigt Pixel-Art oder Placeholder
+- "Charakter erstellen"-Button öffnet den Creator, speichert und registriert
+- Namensfeld: speichert bei Änderung, registriert bei `change`
+- Socket: `register-player` mit `game: "lobby"`
+- `online-players` Event: rendert Spielerliste mit Avatar + Name + Status
+- Re-Registrierung bei Socket-Reconnect
+
+### Nicht geändert
+- server.js (register-player Event unterstützt `game: "lobby"` bereits)
+- Nostalgiabait (keine Änderungen)
+- games/maexchen/index.html (unverändert)
+- Canvas-Versionen der Boot-Sequenzen
 
 ## Was funktioniert
-- Shared Player-Modul ist vollständig und wiederverwendbar
-- Konsolen-Seiten laden korrekt mit Error-Fallback wenn kein Video vorhanden
-- Navigation: Hauptseite → Nostalgiabait-Übersicht → Konsolen-Video-Player
-- Keyboard-Steuerung (Space, Escape)
-- Mobile/Touch-Support
-- Canvas-Versionen weiterhin direkt erreichbar über ps2.html / gamecube.html
+- Character auf Hauptseite erstellen → wird in localStorage gespeichert
+- Name auf Hauptseite eingeben → wird in localStorage gespeichert
+- In Mäxchen wechseln → Name und Character werden automatisch vorgeladen
+- Character in Mäxchen erstellen → wird auch auf der Hauptseite angezeigt
+- Online-Spieler werden global auf allen Seiten angezeigt
+- Spieler auf der Hauptseite registrieren sich als `game: "lobby"`
 
 ## Was ist offen
-
-Nichts — alles abgeschlossen. Boot-Videos wurden hinzugefügt:
-- `public/nostalgiabait/ps2/boot.mp4` (607 KB)
-- `public/nostalgiabait/gamecube/boot.mp4` (223 KB)
+- Character-Edit in der Avatar-Bar ist nur über den Button möglich (kein Klick auf den Avatar selbst)

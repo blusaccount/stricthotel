@@ -3,7 +3,7 @@
 // ============================
 
 (function() {
-    const { $ } = window.MaexchenApp;
+    const $ = (window.MaexchenApp && window.MaexchenApp.$) || (id => document.getElementById(id));
 
     const GRID_SIZE = 16;
     const COLORS = [
@@ -272,7 +272,7 @@
 
     function confirm() {
         // Save to localStorage
-        localStorage.setItem('maexchen-pixels', JSON.stringify(pixels));
+        localStorage.setItem('stricthotel-character', JSON.stringify(pixels));
 
         // Close creator
         const creator = document.getElementById('character-creator');
@@ -338,7 +338,7 @@
 
     // Load saved character
     function loadSavedCharacter() {
-        const saved = localStorage.getItem('maexchen-pixels');
+        const saved = localStorage.getItem('stricthotel-character');
         if (saved) {
             try {
                 pixels = JSON.parse(saved);
@@ -352,7 +352,7 @@
 
     // Check if character was created
     function hasCharacter() {
-        const saved = localStorage.getItem('maexchen-pixels');
+        const saved = localStorage.getItem('stricthotel-character');
         if (!saved) return false;
 
         try {
@@ -407,7 +407,7 @@
     }
 
     // Public API
-    window.MaexchenCreator = {
+    const api = {
         showCreator,
         getAvatarDisplay,
         getCharacter,
@@ -417,4 +417,6 @@
         renderToDataURL,
         COLORS
     };
+    window.MaexchenCreator = api;
+    window.StrictHotelCreator = api;
 })();

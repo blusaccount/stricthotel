@@ -12,6 +12,8 @@
         .menu-container {
             text-align: center;
             padding: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
         .arcade-title {
@@ -25,7 +27,81 @@
         .arcade-subtitle {
             color: var(--text-dim);
             font-size: 1.2rem;
-            margin-bottom: 60px;
+            margin-bottom: 30px;
+        }
+
+        /* Avatar Bar */
+        .avatar-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            padding: 15px 20px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: var(--radius);
+        }
+
+        .avatar-preview {
+            width: 48px;
+            height: 48px;
+            image-rendering: pixelated;
+            border: 2px solid var(--accent);
+            border-radius: 4px;
+            background: #000;
+        }
+
+        .avatar-placeholder {
+            width: 48px;
+            height: 48px;
+            border: 2px dashed var(--text-dim);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            background: #000;
+        }
+
+        .avatar-name {
+            color: var(--accent);
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .avatar-name-input {
+            background: var(--bg);
+            border: 1px solid var(--accent);
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 140px;
+        }
+
+        .avatar-name-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0,255,136,0.3);
+        }
+
+        .btn-avatar {
+            background: var(--surface);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            padding: 8px 14px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+
+        .btn-avatar:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0,255,136,0.4);
         }
 
         .game-grid {
@@ -33,7 +109,7 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 30px;
             max-width: 900px;
-            margin: 0 auto;
+            margin: 0 auto 40px;
         }
 
         .game-card {
@@ -96,6 +172,57 @@
             display: inline-block;
         }
 
+        /* Online Players Section */
+        .online-section {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: left;
+        }
+
+        .online-section h3 {
+            color: var(--accent);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .online-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .online-player {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid rgba(0,255,136,0.15);
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+        }
+
+        .online-avatar img {
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+        }
+
+        .online-status {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .no-players {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
         /* Mobile responsive */
         @media (max-width: 768px) {
             .menu-container {
@@ -109,7 +236,13 @@
 
             .arcade-subtitle {
                 font-size: 1rem;
-                margin-bottom: 40px;
+                margin-bottom: 20px;
+            }
+
+            .avatar-bar {
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 12px;
             }
 
             .game-grid {
@@ -141,7 +274,7 @@
 
             .arcade-subtitle {
                 font-size: 0.85rem;
-                margin-bottom: 30px;
+                margin-bottom: 15px;
             }
 
             .game-icon {
@@ -152,6 +285,10 @@
             .game-title {
                 font-size: 1.1rem;
             }
+
+            .avatar-name-input {
+                width: 110px;
+            }
         }
     </style>
 </head>
@@ -160,6 +297,16 @@
 <div class="menu-container">
     <div class="arcade-title">STRICT HOTEL</div>
     <div class="arcade-subtitle">Minigame Collection</div>
+
+    <!-- Avatar Bar -->
+    <div class="avatar-bar">
+        <div id="avatar-display">
+            <div class="avatar-placeholder" id="avatar-placeholder">👽</div>
+            <img class="avatar-preview" id="avatar-img" src="" alt="" style="display:none;">
+        </div>
+        <input type="text" class="avatar-name-input" id="input-name" maxlength="12" placeholder="Dein Name..." autocomplete="off">
+        <button class="btn-avatar" id="btn-create-character">CHARAKTER ERSTELLEN</button>
+    </div>
 
     <div class="game-grid">
         <a href="/games/maexchen/" class="game-card">
@@ -192,7 +339,24 @@
             <div class="game-players">Solo Experience</div>
         </a>
     </div>
+
+    <!-- Online Players -->
+    <div class="online-section">
+        <h3>ONLINE: <span id="online-count">0</span></h3>
+        <div id="online-list" class="online-list">
+            <span class="no-players">Niemand online</span>
+        </div>
+    </div>
 </div>
+
+<!-- Socket.io -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- Character Creator (standalone, no MaexchenApp needed) -->
+<script src="/shared/js/creator.js"></script>
+
+<!-- Lobby Logic -->
+<script src="/lobby.js"></script>
 
 </body>
 </html>

@@ -104,6 +104,8 @@
             ? window.MaexchenCreator.getCharacter()
             : null;
         socket.emit('register-player', { name, character, game: gameType });
+        // Sync name to shared storage
+        localStorage.setItem('stricthotel-name', name);
     }
 
     // Edit character button
@@ -138,6 +140,12 @@
 
     // Initialize character preview
     setTimeout(updateCharacterPreview, 100);
+
+    // Pre-fill name from lobby if saved
+    const savedLobbyName = localStorage.getItem('stricthotel-name');
+    if (savedLobbyName && $('input-name') && !$('input-name').value) {
+        $('input-name').value = savedLobbyName;
+    }
 
     // Enter key handlers
     $('input-name')?.addEventListener('keydown', (e) => {
