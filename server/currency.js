@@ -115,4 +115,8 @@ export async function deductBalance(playerName, amount, reason = 'adjustment', m
     return Number(row.balance);
 }
 
+export function getAllPlayerNamesMemory() {
+    return Array.from(balances.keys());
+}
+
 export { STARTING_BALANCE };

@@ -2,7 +2,7 @@
 // Players invest StrictCoins into real stocks (1 StrictCoin = 1 USD).
 // Portfolio value tracks the real market price so gains/losses mirror reality.
 
-import { getBalance, addBalance, deductBalance } from './currency.js';
+import { getBalance, addBalance, deductBalance, getAllPlayerNamesMemory } from './currency.js';
 import { isDatabaseEnabled, query, withTransaction } from './db.js';
 
 // Small tolerance for floating-point comparison when selling shares
@@ -205,13 +205,14 @@ export async function sellStock(playerName, symbol, price, amount) {
  */
 export async function getAllPortfolioPlayerNames() {
     if (!isDatabaseEnabled()) {
-        return Array.from(portfolios.keys());
+        // Combine players who have portfolios with players who have balances
+        const names = new Set(portfolios.keys());
+        for (const n of getAllPlayerNamesMemory()) names.add(n);
+        return Array.from(names);
     }
 
     const result = await query(
-        `select distinct p.name
-         from stock_positions sp
-         join players p on p.id = sp.player_id`
+        'select distinct name from players'
     );
     return result.rows.map(r => r.name);
 }
