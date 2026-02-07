@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - StrictHotel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/shared/css/theme.css">
+    <style>
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .login-title {
+            font-size: 2.5rem;
+            color: var(--accent);
+            text-shadow: 0 0 30px var(--accent);
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+
+        .login-subtitle {
+            color: var(--text-dim);
+            font-size: 1rem;
+            margin-bottom: 30px;
+        }
+
+        .login-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--accent);
+            color: var(--text);
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0,255,136,0.3);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: var(--accent);
+            border: none;
+            color: #000;
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            box-shadow: 0 0 20px rgba(0,255,136,0.5);
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.9rem;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 30px 20px;
+            }
+
+            .login-title {
+                font-size: 2rem;
+                letter-spacing: 2px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-title">STRICT HOTEL</div>
+            <div class="login-subtitle">Password geschützt</div>
+            
+            <form id="login-form">
+                <input 
+                    type="password" 
+                    class="login-input" 
+                    id="password" 
+                    placeholder="Passwort eingeben..." 
+                    autocomplete="off"
+                    autofocus
+                >
+                <button type="submit" class="login-btn">EINTRETEN</button>
+                <div class="error-message" id="error-message">❌ Falsches Passwort</div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMessage.classList.remove('show');
+
+            const password = passwordInput.value;
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password }),
+                });
+
+                if (response.ok) {
+                    // Redirect to home page on success
+                    window.location.href = '/';
+                } else {
+                    // Show error message
+                    errorMessage.classList.add('show');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = '❌ Verbindungsfehler';
+                errorMessage.classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>
