@@ -2199,3 +2199,56 @@ h3 { font-size: 1.3rem; color: var(--text-dim); letter-spacing: 2px; text-transf
     height: 100%;
     image-rendering: pixelated;
 }
+
+/* ===== Stock Ticker Bar ===== */
+.stock-ticker-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 32px;
+    background: var(--surface);
+    border-top: 1px solid rgba(0,255,136,0.3);
+    overflow: hidden;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+}
+
+.stock-ticker-track {
+    display: flex;
+    gap: 32px;
+    white-space: nowrap;
+    animation: ticker-scroll 60s linear infinite;
+    will-change: transform;
+}
+
+.ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+}
+
+.ticker-symbol {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.ticker-price {
+    color: var(--text);
+}
+
+.ticker-change.up {
+    color: var(--green);
+}
+
+.ticker-change.down {
+    color: var(--danger);
+}
+
+@keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
