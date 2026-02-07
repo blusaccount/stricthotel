@@ -347,6 +347,58 @@
             <span class="no-players">Niemand online</span>
         </div>
     </div>
+
+    <!-- Pictochat -->
+    <div class="picto-section" id="pictochat-panel">
+        <div class="picto-header">
+            <div>
+                <div class="picto-title">PICTOCHAT</div>
+                <div class="picto-subtitle">Shared doodles in the lobby</div>
+            </div>
+            <div class="picto-pages" id="picto-pages">
+                <button class="picto-page active" data-page="0" type="button">A</button>
+                <button class="picto-page" data-page="1" type="button">B</button>
+                <button class="picto-page" data-page="2" type="button">C</button>
+                <button class="picto-page" data-page="3" type="button">D</button>
+            </div>
+        </div>
+        <div class="picto-body">
+            <div class="picto-tools">
+                <div class="picto-tool-group">
+                    <button class="picto-tool active" data-tool="pen" type="button">Pen</button>
+                    <button class="picto-tool" data-tool="eraser" type="button">Eraser</button>
+                    <button class="picto-tool" data-tool="line" type="button">Line</button>
+                    <button class="picto-tool" data-tool="rect" type="button">Rect</button>
+                    <button class="picto-tool" data-tool="circle" type="button">Circle</button>
+                </div>
+                <div class="picto-tool-group">
+                    <button class="picto-tool" data-action="undo" type="button">Undo</button>
+                    <button class="picto-tool" data-action="redo" type="button">Redo</button>
+                    <button class="picto-tool" data-action="clear" type="button">Clear</button>
+                </div>
+                <div class="picto-size">
+                    <label for="picto-size">Size</label>
+                    <input id="picto-size" type="range" min="1" max="18" value="4">
+                </div>
+                <div class="picto-palette" id="picto-palette"></div>
+            </div>
+            <div class="picto-canvas-area">
+                <div class="picto-canvas-wrap">
+                    <canvas id="picto-canvas"></canvas>
+                    <canvas id="picto-preview"></canvas>
+                    <div id="picto-cursors"></div>
+                </div>
+                <div class="picto-status" id="picto-status">Connecting...</div>
+            </div>
+            <div class="picto-chat">
+                <div class="picto-chat-messages" id="picto-chat-messages"></div>
+                <div class="picto-chat-input">
+                    <input id="picto-chat-input" type="text" maxlength="200" placeholder="Say something...">
+                    <button id="picto-chat-send" class="picto-send" type="button">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Socket.io -->
@@ -357,6 +409,9 @@
 
 <!-- Lobby Logic -->
 <script src="/lobby.js"></script>
+
+<!-- Pictochat Logic -->
+<script src="/pictochat.js"></script>
 
 </body>
 </html>

@@ -21,6 +21,12 @@
     var NAME_KEY = 'stricthotel-name';
     var registered = false;
 
+    window.StrictHotelLobby = window.StrictHotelLobby || {};
+    window.StrictHotelLobby.socket = socket;
+    window.StrictHotelLobby.getName = function () {
+        return (inputName && inputName.value.trim()) || localStorage.getItem(NAME_KEY) || '';
+    };
+
     // --- Init: Load saved state ---
     function init() {
         // Restore name

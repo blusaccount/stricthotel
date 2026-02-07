@@ -1301,6 +1301,274 @@ h3 { font-size: 1.3rem; color: var(--text-dim); letter-spacing: 2px; text-transf
     padding: 8px;
 }
 
+/* ===== Pictochat Lobby ===== */
+.picto-section {
+    margin: 50px auto 20px;
+    max-width: 1100px;
+    border: 2px solid var(--accent);
+    background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(255,221,0,0.06));
+    box-shadow: 0 15px 40px rgba(0,0,0,0.35);
+    padding: 20px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.picto-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(45deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04) 8px, transparent 8px, transparent 16px);
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.picto-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 16px;
+}
+
+.picto-title {
+    color: var(--accent);
+    font-size: 1.6rem;
+    letter-spacing: 3px;
+}
+
+.picto-subtitle {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+
+.picto-pages {
+    display: flex;
+    gap: 8px;
+}
+
+.picto-page {
+    border: 1px solid var(--accent);
+    background: rgba(0,0,0,0.5);
+    color: var(--accent);
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.picto-page.active,
+.picto-page:hover {
+    background: var(--accent);
+    color: #000;
+    box-shadow: 0 0 12px rgba(0,255,136,0.4);
+}
+
+.picto-body {
+    display: grid;
+    grid-template-columns: 170px minmax(0, 1fr) 220px;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.picto-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.picto-tool-group {
+    display: grid;
+    gap: 8px;
+}
+
+.picto-tool {
+    background: rgba(0,0,0,0.55);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.picto-tool.active,
+.picto-tool:hover {
+    background: var(--accent);
+    color: #000;
+    transform: translateY(-1px);
+    box-shadow: 0 0 12px rgba(0,255,136,0.35);
+}
+
+.picto-size label {
+    display: block;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+}
+
+.picto-size input {
+    width: 100%;
+}
+
+.picto-palette {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.picto-swatch {
+    height: 26px;
+    border: 2px solid rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.picto-swatch.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0,255,136,0.5);
+}
+
+.picto-canvas-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.picto-canvas-wrap {
+    position: relative;
+    border: 2px solid #1b1b1b;
+    background: #f6f0e6;
+    aspect-ratio: 4 / 3;
+    box-shadow: inset 0 0 0 2px rgba(0,0,0,0.15), 0 12px 24px rgba(0,0,0,0.25);
+    overflow: hidden;
+    background-image:
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+#picto-canvas,
+#picto-preview {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#picto-preview {
+    pointer-events: none;
+}
+
+#picto-cursors {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.picto-cursor {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.65rem;
+    color: #111;
+    padding: 2px 6px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 999px;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.picto-cursor-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.picto-status {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    text-align: right;
+}
+
+.picto-chat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,255,136,0.2);
+    padding: 10px;
+    border-radius: 12px;
+    max-height: 100%;
+}
+
+.picto-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 200px;
+}
+
+.picto-chat-message {
+    background: rgba(0,0,0,0.5);
+    border-left: 3px solid var(--accent);
+    padding: 6px 8px;
+    font-size: 0.75rem;
+}
+
+.picto-chat-message .name {
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.picto-chat-input {
+    display: flex;
+    gap: 6px;
+}
+
+.picto-chat-input input {
+    flex: 1;
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--text);
+    padding: 8px;
+    font-size: 0.75rem;
+}
+
+.picto-send {
+    background: var(--accent);
+    border: none;
+    color: #000;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .picto-body {
+        grid-template-columns: 1fr;
+    }
+
+    .picto-tools {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .picto-tool-group {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
 /* ===== Player Sidebar (In-Game) ===== */
 #player-sidebar {
     position: fixed;
