@@ -1,7 +1,7 @@
 {
   "name": "stricthotel",
   "version": "1.0.0",
-  "description": "StrictHotel - Minigame Collection + Discord Bot",
+  "description": "StrictHotel + Discord Bot",
   "main": "server.js",
   "type": "module",
   "scripts": {
