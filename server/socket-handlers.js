@@ -341,9 +341,7 @@ export function registerSocketHandlers(io) {
 
             pictoState.strokes = [];
             getRedoStack(socket.id).length = 0;
-            for (const [strokeId] of pictoState.inProgress.entries()) {
-                pictoState.inProgress.delete(strokeId);
-            }
+            pictoState.inProgress.clear();
 
             io.to(PICTO_ROOM).emit('picto-clear', {
                 byId: socket.id
