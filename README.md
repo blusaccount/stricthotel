@@ -17,6 +17,14 @@ StrictHotel ist eine experimentelle Minigame-Sammlung im **neal.fun-inspirierten
 - **Shared**: [shared](shared) (Chat, Lobby, Avatare, Creator, CSS, Audio)
 - **Bot**: [bot](bot) (Discord Bot + Commands)
 
+## LLM Agent Hinweise
+Wenn LLM Agents im Repo arbeiten, bitte diese Dateien verwenden:
+- [AGENTS.md](AGENTS.md): Einstieg und Arbeitsregeln
+- [LLM_AGENT_GUIDE.md](LLM_AGENT_GUIDE.md): Repo-Mentalmodell, Do/Don'ts
+- [EVENTS.md](EVENTS.md): Socket-Event Uebersicht
+- [PLANS.md](PLANS.md): ExecPlan Vorlage fuer groessere Tasks
+- [HANDOFF.md](HANDOFF.md): Kurzprotokoll von Aenderungen und Risiken
+
 ## Lokal starten
 ```
 npm install
