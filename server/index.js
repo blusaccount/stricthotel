@@ -210,6 +210,96 @@ app.get('/api/ticker', async (req, res) => {
     }
 });
 
+// ============== STOCK SEARCH API ==============
+
+const searchCache = new Map();
+const SEARCH_CACHE_MS = 10 * 60 * 1000; // 10 minutes
+
+app.get('/api/stock-search', async (req, res) => {
+    try {
+        const query = (req.query.q || '').trim();
+        if (!query || query.length < 1 || query.length > 30) {
+            return res.json([]);
+        }
+        // Sanitise: only allow alphanumeric, spaces, dots, dashes
+        const sanitised = query.replace(/[^a-zA-Z0-9 .\-]/g, '');
+        if (!sanitised) return res.json([]);
+
+        const cacheKey = sanitised.toUpperCase();
+        const cached = searchCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < SEARCH_CACHE_MS) {
+            return res.json(cached.data);
+        }
+
+        const results = await yahooFinance.search(sanitised, { quotesCount: 8, newsCount: 0 });
+        const quotes = (results.quotes || [])
+            .filter(q => q.symbol && (q.quoteType === 'EQUITY' || q.quoteType === 'ETF'))
+            .slice(0, 8)
+            .map(q => ({
+                symbol: q.symbol.replace('^', ''),
+                name: q.shortname || q.longname || q.symbol,
+                type: q.quoteType,
+                exchange: q.exchDisp || q.exchange || '',
+            }));
+
+        searchCache.set(cacheKey, { data: quotes, ts: Date.now() });
+        // Limit cache size
+        if (searchCache.size > 200) {
+            const oldest = searchCache.keys().next().value;
+            searchCache.delete(oldest);
+        }
+
+        res.json(quotes);
+    } catch (err) {
+        console.error('[StockSearch] Error:', err.message);
+        res.json([]);
+    }
+});
+
+// ============== SINGLE STOCK QUOTE API ==============
+
+const singleQuoteCache = new Map();
+const SINGLE_QUOTE_CACHE_MS = 2 * 60 * 1000; // 2 minutes
+
+app.get('/api/stock-quote', async (req, res) => {
+    try {
+        const symbol = (req.query.symbol || '').trim().toUpperCase().replace(/[^A-Z0-9.\-^]/g, '');
+        if (!symbol || symbol.length > 12) {
+            return res.status(400).json({ error: 'Invalid symbol' });
+        }
+
+        const cached = singleQuoteCache.get(symbol);
+        if (cached && Date.now() - cached.ts < SINGLE_QUOTE_CACHE_MS) {
+            return res.json(cached.data);
+        }
+
+        const q = await yahooFinance.quote(symbol);
+        if (!q || q.regularMarketPrice == null) {
+            return res.status(404).json({ error: 'Symbol not found' });
+        }
+
+        const data = {
+            symbol: (q.symbol || symbol).replace('^', ''),
+            name: q.shortName || q.longName || symbol,
+            price: parseFloat(q.regularMarketPrice.toFixed(2)),
+            change: parseFloat((q.regularMarketChange ?? 0).toFixed(2)),
+            pct: parseFloat((q.regularMarketChangePercent ?? 0).toFixed(2)),
+            currency: q.currency || 'USD',
+        };
+
+        singleQuoteCache.set(symbol, { data, ts: Date.now() });
+        if (singleQuoteCache.size > 500) {
+            const oldest = singleQuoteCache.keys().next().value;
+            singleQuoteCache.delete(oldest);
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error('[StockQuote] Error:', err.message);
+        res.status(502).json({ error: 'Failed to fetch quote' });
+    }
+});
+
 // ============== NOSTALGIABAIT CONFIG ==============
 
 const NOSTALGIA_VIDEOS = {
@@ -224,7 +314,7 @@ app.get('/api/nostalgia-config', (req, res) => {
 
 // ============== SOCKET HANDLERS ==============
 
-registerSocketHandlers(io, { fetchTickerQuotes: fetchTickerQuotes });
+registerSocketHandlers(io, { fetchTickerQuotes: fetchTickerQuotes, yahooFinance: yahooFinance });
 
 // ============== PERIODIC CLEANUP ==============
 
