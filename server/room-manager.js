@@ -162,6 +162,22 @@ export function removePlayerFromRoom(io, socketId, room) {
     room.players.splice(playerIndex, 1);
     socketToRoom.delete(socketId);
 
+    // Clean up bet for leaving player and reset requiredBet if no bets remain
+    if (room.bets) {
+        delete room.bets[socketId];
+        const anyBets = room.players.some(p => (room.bets[p.socketId] || 0) > 0);
+        if (!anyBets) {
+            room.requiredBet = 0;
+        }
+        if (!room.game && room.players.length > 0) {
+            const betsInfo = room.players.map(p => ({
+                name: p.name,
+                bet: room.bets[p.socketId] || 0
+            }));
+            io.to(room.code).emit('bets-update', { bets: betsInfo, requiredBet: room.requiredBet || 0 });
+        }
+    }
+
     // Delete empty room or reassign host
     if (room.players.length === 0) {
         rooms.delete(room.code);
