@@ -10,13 +10,19 @@ const state = {
         snare: new Array(16).fill(0),
         hihat: new Array(16).fill(0),
         clap: new Array(16).fill(0),
+        tom: new Array(16).fill(0),
+        ride: new Array(16).fill(0),
+        cowbell: new Array(16).fill(0),
         bass: new Array(16).fill(0),
-        synth: new Array(16).fill(0)
+        synth: new Array(16).fill(0),
+        pluck: new Array(16).fill(0),
+        pad: new Array(16).fill(0)
     },
     bpm: 120,
     isPlaying: false,
     currentStep: 0,
-    listeners: []
+    listeners: [],
+    masterVolume: 1.0
 };
 
 const synthSettings = {
@@ -29,19 +35,36 @@ const synthSettings = {
     volume: 0.3
 };
 
+const bassSettings = {
+    waveform: 'sine',
+    frequency: 65.41, // C2
+    cutoff: 800,
+    resonance: 1,
+    attack: 0.01,
+    decay: 0.5,
+    distortion: 0
+};
+
 // ===== Audio Context & Synthesis =====
 let audioContext;
+let masterGainNode;
 let isAudioInitialized = false;
 
 function initAudio() {
     if (isAudioInitialized) return;
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Create master gain node for volume control
+    masterGainNode = audioContext.createGain();
+    masterGainNode.gain.value = 1.0; // Default 100%
+    masterGainNode.connect(audioContext.destination);
+    
     isAudioInitialized = true;
     console.log('[LoopMachine] Audio context initialized');
 }
 
 function playKick() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     // Oscillator for punch
@@ -55,14 +78,14 @@ function playKick() {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
     
     osc.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(masterGainNode);
     
     osc.start(now);
     osc.stop(now + 0.3);
 }
 
 function playSnare() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     // White noise + oscillator
@@ -86,7 +109,7 @@ function playSnare() {
     
     noise.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
-    noiseGain.connect(audioContext.destination);
+    noiseGain.connect(masterGainNode);
     
     // Oscillator component
     const osc = audioContext.createOscillator();
@@ -99,7 +122,7 @@ function playSnare() {
     oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
     
     osc.connect(oscGain);
-    oscGain.connect(audioContext.destination);
+    oscGain.connect(masterGainNode);
     
     noise.start(now);
     noise.stop(now + 0.2);
@@ -108,7 +131,7 @@ function playSnare() {
 }
 
 function playHihat() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     // High-frequency filtered noise
@@ -132,14 +155,14 @@ function playHihat() {
     
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(masterGainNode);
     
     noise.start(now);
     noise.stop(now + 0.1);
 }
 
 function playClap() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     // Filtered noise with envelope
@@ -164,34 +187,225 @@ function playClap() {
     
     noise.connect(filter);
     filter.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(masterGainNode);
     
     noise.start(now);
     noise.stop(now + 0.15);
 }
 
 function playBass() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+    
+    // Use bassSettings
+    osc.type = bassSettings.waveform;
+    osc.frequency.setValueAtTime(bassSettings.frequency, now);
+    
+    // Filter
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(bassSettings.cutoff, now);
+    filter.frequency.exponentialRampToValueAtTime(
+        Math.max(50, bassSettings.cutoff * 0.3),
+        now + bassSettings.attack + bassSettings.decay
+    );
+    filter.Q.value = bassSettings.resonance;
+    
+    // Envelope: attack then decay
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + bassSettings.attack);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + bassSettings.attack + bassSettings.decay);
+    
+    osc.connect(filter);
+    
+    // Optional distortion
+    if (bassSettings.distortion > 0) {
+        const distortion = audioContext.createWaveShaper();
+        distortion.curve = makeDistortionCurve(bassSettings.distortion * 100);
+        filter.connect(distortion);
+        distortion.connect(gain);
+    } else {
+        filter.connect(gain);
+    }
+    
+    gain.connect(masterGainNode);
+    
+    const duration = bassSettings.attack + bassSettings.decay;
+    osc.start(now);
+    osc.stop(now + duration);
+}
+
+function makeDistortionCurve(amount) {
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const deg = Math.PI / 180;
+    
+    for (let i = 0; i < samples; i++) {
+        const x = (i * 2 / samples) - 1;
+        curve[i] = (3 + amount) * x * 20 * deg / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
+}
+
+function playTom() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Oscillator starting at ~120Hz with quick pitch envelope down to 50Hz
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
     
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(60, now);
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
     
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    gain.gain.setValueAtTime(0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
     
     osc.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(masterGainNode);
+    
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
+function playRide() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // High-frequency noise with band-pass filter
+    const bufferSize = audioContext.sampleRate * 0.3;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioContext.createBufferSource();
+    noise.buffer = buffer;
+    
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 10000;
+    filter.Q.value = 1;
+    
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
+    
+    noise.start(now);
+    noise.stop(now + 0.3);
+}
+
+function playCowbell() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Two square wave oscillators (800Hz + 540Hz)
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(800, now);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(540, now);
+    
+    filter.type = 'bandpass';
+    filter.frequency.value = 1000;
+    filter.Q.value = 1;
+    
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.1);
+    osc2.stop(now + 0.1);
+}
+
+function playPluck() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Triangle wave with fast attack and medium decay
+    const osc = audioContext.createOscillator();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now); // A3
+    
+    // Filter sweep for pluck character
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3000, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 0.3);
+    filter.Q.value = 2;
+    
+    // Fast attack, medium decay
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
     
     osc.start(now);
     osc.stop(now + 0.3);
 }
 
+function playPad() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Multiple detuned oscillators for rich pad sound
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const osc3 = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    const baseFreq = 130.81; // C3
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(baseFreq, now);
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(baseFreq * 1.01, now); // Slightly detuned
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(baseFreq * 0.99, now); // Slightly detuned down
+    
+    // Slow attack and long release
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.2);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    osc3.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+    osc1.stop(now + 1.0);
+    osc2.stop(now + 1.0);
+    osc3.stop(now + 1.0);
+}
+
 function playSynth() {
-    if (!audioContext) return;
+    if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
     
     const osc = audioContext.createOscillator();
@@ -217,7 +431,7 @@ function playSynth() {
     
     osc.connect(filter);
     filter.connect(gain);
-    gain.connect(audioContext.destination);
+    gain.connect(masterGainNode);
     
     const duration = synthSettings.attack + synthSettings.decay;
     osc.start(now);
@@ -229,8 +443,13 @@ const instrumentPlayers = {
     snare: playSnare,
     hihat: playHihat,
     clap: playClap,
+    tom: playTom,
+    ride: playRide,
+    cowbell: playCowbell,
     bass: playBass,
-    synth: playSynth
+    synth: playSynth,
+    pluck: playPluck,
+    pad: playPad
 };
 
 // ===== Sequencer Loop =====
@@ -282,7 +501,7 @@ function updateStepHighlight(currentStep) {
 
 // ===== UI =====
 function renderGrid() {
-    const instruments = ['kick', 'snare', 'hihat', 'clap', 'bass', 'synth'];
+    const instruments = ['kick', 'snare', 'hihat', 'clap', 'tom', 'ride', 'cowbell', 'bass', 'synth', 'pluck', 'pad'];
     
     instruments.forEach(instrument => {
         const container = document.querySelector(`.grid-cells[data-instrument="${instrument}"]`);
@@ -378,7 +597,9 @@ socket.on('disconnect', () => {
     document.getElementById('play-pause-btn').disabled = true;
     document.getElementById('clear-btn').disabled = true;
     document.getElementById('bpm-input').disabled = true;
+    document.getElementById('master-volume').disabled = true;
     enableSynthControls(false);
+    enableBassControls(false);
 });
 
 socket.on('loop-sync', (data) => {
@@ -393,10 +614,26 @@ socket.on('loop-sync', (data) => {
     state.bpm = data.bpm;
     document.getElementById('bpm-input').value = data.bpm;
     
+    // Update master volume
+    if (typeof data.masterVolume === 'number') {
+        state.masterVolume = data.masterVolume;
+        if (masterGainNode) {
+            masterGainNode.gain.value = data.masterVolume;
+        }
+        document.getElementById('master-volume').value = Math.round(data.masterVolume * 100);
+        document.getElementById('master-volume-value').textContent = Math.round(data.masterVolume * 100) + '%';
+    }
+    
     // Update synth settings
     if (data.synth) {
         Object.assign(synthSettings, data.synth);
         updateSynthUI();
+    }
+    
+    // Update bass settings
+    if (data.bass) {
+        Object.assign(bassSettings, data.bass);
+        updateBassUI();
     }
     
     // Update playing state
@@ -420,7 +657,9 @@ socket.on('loop-sync', (data) => {
     document.getElementById('play-pause-btn').disabled = false;
     document.getElementById('clear-btn').disabled = false;
     document.getElementById('bpm-input').disabled = false;
+    document.getElementById('master-volume').disabled = false;
     enableSynthControls(true);
+    enableBassControls(true);
     
     setStatus('Synced', 'success');
 });
@@ -466,6 +705,22 @@ socket.on('loop-synth-updated', (data) => {
     updateSynthUI();
 });
 
+socket.on('loop-master-volume-updated', (data) => {
+    console.log('[LoopMachine] Master volume updated', data);
+    state.masterVolume = data.masterVolume;
+    if (masterGainNode) {
+        masterGainNode.gain.value = data.masterVolume;
+    }
+    document.getElementById('master-volume').value = Math.round(data.masterVolume * 100);
+    document.getElementById('master-volume-value').textContent = Math.round(data.masterVolume * 100) + '%';
+});
+
+socket.on('loop-bass-updated', (data) => {
+    console.log('[LoopMachine] Bass updated', data);
+    Object.assign(bassSettings, data);
+    updateBassUI();
+});
+
 // ===== Synth Helpers =====
 function emitSynthSettings() {
     socket.emit('loop-set-synth', { ...synthSettings });
@@ -509,8 +764,8 @@ function updateSynthUI() {
 }
 
 function enableSynthControls(enabled) {
-    // Enable/disable wave buttons
-    document.querySelectorAll('.wave-btn').forEach(btn => {
+    // Enable/disable wave buttons for synth
+    document.querySelectorAll('.wave-btn:not([data-target="bass"])').forEach(btn => {
         btn.disabled = !enabled;
     });
     
@@ -520,6 +775,66 @@ function enableSynthControls(enabled) {
     
     // Enable/disable all sliders
     const sliders = ['synth-cutoff', 'synth-resonance', 'synth-attack', 'synth-decay', 'synth-volume'];
+    sliders.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+    });
+}
+
+// ===== Bass Helpers =====
+function emitBassSettings() {
+    socket.emit('loop-set-bass', { ...bassSettings });
+}
+
+function updateBassUI() {
+    // Update wave buttons
+    document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.wave === bassSettings.waveform);
+    });
+    
+    // Update note dropdown
+    const noteSelect = document.getElementById('bass-note');
+    if (noteSelect) noteSelect.value = bassSettings.frequency;
+    
+    // Update sliders and their value displays
+    const cutoffSlider = document.getElementById('bass-cutoff');
+    const cutoffValue = document.getElementById('bass-cutoff-value');
+    if (cutoffSlider) cutoffSlider.value = bassSettings.cutoff;
+    if (cutoffValue) cutoffValue.textContent = bassSettings.cutoff;
+    
+    const resoSlider = document.getElementById('bass-resonance');
+    const resoValue = document.getElementById('bass-resonance-value');
+    if (resoSlider) resoSlider.value = Math.round(bassSettings.resonance * 10);
+    if (resoValue) resoValue.textContent = (bassSettings.resonance).toFixed(1);
+    
+    const attackSlider = document.getElementById('bass-attack');
+    const attackValue = document.getElementById('bass-attack-value');
+    if (attackSlider) attackSlider.value = Math.round(bassSettings.attack * 100);
+    if (attackValue) attackValue.textContent = (bassSettings.attack).toFixed(2) + 's';
+    
+    const decaySlider = document.getElementById('bass-decay');
+    const decayValue = document.getElementById('bass-decay-value');
+    if (decaySlider) decaySlider.value = Math.round(bassSettings.decay * 100);
+    if (decayValue) decayValue.textContent = (bassSettings.decay).toFixed(2) + 's';
+    
+    const distSlider = document.getElementById('bass-distortion');
+    const distValue = document.getElementById('bass-distortion-value');
+    if (distSlider) distSlider.value = Math.round(bassSettings.distortion * 100);
+    if (distValue) distValue.textContent = Math.round(bassSettings.distortion * 100) + '%';
+}
+
+function enableBassControls(enabled) {
+    // Enable/disable wave buttons for bass
+    document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+        btn.disabled = !enabled;
+    });
+    
+    // Enable/disable note dropdown
+    const noteSelect = document.getElementById('bass-note');
+    if (noteSelect) noteSelect.disabled = !enabled;
+    
+    // Enable/disable all sliders
+    const sliders = ['bass-cutoff', 'bass-resonance', 'bass-attack', 'bass-decay', 'bass-distortion'];
     sliders.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !enabled;
@@ -546,6 +861,22 @@ document.getElementById('bpm-input').addEventListener('change', (e) => {
     socket.emit('loop-set-bpm', { bpm });
 });
 
+// Master volume slider
+const masterVolumeSlider = document.getElementById('master-volume');
+const masterVolumeValue = document.getElementById('master-volume-value');
+if (masterVolumeSlider && masterVolumeValue) {
+    masterVolumeSlider.addEventListener('input', (e) => {
+        initAudio();
+        const volume = parseInt(e.target.value, 10) / 100;
+        state.masterVolume = volume;
+        if (masterGainNode) {
+            masterGainNode.gain.value = volume;
+        }
+        masterVolumeValue.textContent = e.target.value + '%';
+        socket.emit('loop-set-master-volume', { masterVolume: volume });
+    });
+}
+
 // ===== Synth Controls =====
 // Collapsible toggle
 const synthHeader = document.getElementById('synth-header');
@@ -559,7 +890,7 @@ if (synthHeader && synthControls) {
 }
 
 // Wave buttons
-document.querySelectorAll('.wave-btn').forEach(btn => {
+document.querySelectorAll('.wave-btn:not([data-target="bass"])').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.disabled) return;
         initAudio();
@@ -636,6 +967,99 @@ if (volSlider && volValue) {
         synthSettings.volume = parseInt(e.target.value, 10) / 100;
         volValue.textContent = Math.round(synthSettings.volume * 100) + '%';
         emitSynthSettings();
+    });
+}
+
+// ===== Bass Controls =====
+// Collapsible toggle
+const bassHeader = document.getElementById('bass-header');
+const bassControls = document.getElementById('bass-controls');
+if (bassHeader && bassControls) {
+    bassHeader.addEventListener('click', () => {
+        const isHidden = bassControls.style.display === 'none';
+        bassControls.style.display = isHidden ? '' : 'none';
+        bassHeader.classList.toggle('collapsed', !isHidden);
+    });
+}
+
+// Wave buttons
+document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        initAudio();
+        bassSettings.waveform = btn.dataset.wave;
+        updateBassUI();
+        emitBassSettings();
+    });
+});
+
+// Note dropdown
+const bassNoteSelect = document.getElementById('bass-note');
+if (bassNoteSelect) {
+    bassNoteSelect.addEventListener('change', (e) => {
+        initAudio();
+        bassSettings.frequency = parseFloat(e.target.value);
+        emitBassSettings();
+    });
+}
+
+// Cutoff slider
+const bassCutoffSlider = document.getElementById('bass-cutoff');
+const bassCutoffValue = document.getElementById('bass-cutoff-value');
+if (bassCutoffSlider && bassCutoffValue) {
+    bassCutoffSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.cutoff = parseInt(e.target.value, 10);
+        bassCutoffValue.textContent = bassSettings.cutoff;
+        emitBassSettings();
+    });
+}
+
+// Resonance slider
+const bassResoSlider = document.getElementById('bass-resonance');
+const bassResoValue = document.getElementById('bass-resonance-value');
+if (bassResoSlider && bassResoValue) {
+    bassResoSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.resonance = parseInt(e.target.value, 10) / 10;
+        bassResoValue.textContent = bassSettings.resonance.toFixed(1);
+        emitBassSettings();
+    });
+}
+
+// Attack slider
+const bassAttackSlider = document.getElementById('bass-attack');
+const bassAttackValue = document.getElementById('bass-attack-value');
+if (bassAttackSlider && bassAttackValue) {
+    bassAttackSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.attack = parseInt(e.target.value, 10) / 100;
+        bassAttackValue.textContent = bassSettings.attack.toFixed(2) + 's';
+        emitBassSettings();
+    });
+}
+
+// Decay slider
+const bassDecaySlider = document.getElementById('bass-decay');
+const bassDecayValue = document.getElementById('bass-decay-value');
+if (bassDecaySlider && bassDecayValue) {
+    bassDecaySlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.decay = parseInt(e.target.value, 10) / 100;
+        bassDecayValue.textContent = bassSettings.decay.toFixed(2) + 's';
+        emitBassSettings();
+    });
+}
+
+// Distortion slider
+const bassDistSlider = document.getElementById('bass-distortion');
+const bassDistValue = document.getElementById('bass-distortion-value');
+if (bassDistSlider && bassDistValue) {
+    bassDistSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.distortion = parseInt(e.target.value, 10) / 100;
+        bassDistValue.textContent = Math.round(bassSettings.distortion * 100) + '%';
+        emitBassSettings();
     });
 }
 
