@@ -400,7 +400,8 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Cleanup rate limiters every minute
-setInterval(cleanupRateLimiters, 60000);
+const RATE_LIMITER_CLEANUP_INTERVAL_MS = 60000; // 1 minute
+setInterval(cleanupRateLimiters, RATE_LIMITER_CLEANUP_INTERVAL_MS);
 console.log('[Cleanup] Rate limiter cleanup scheduled every 60s');
 
 // ============== START SERVER ==============

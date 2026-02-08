@@ -309,7 +309,9 @@ export function cleanupRateLimiters() {
 let _fetchTickerQuotes = null;
 let _getYahooFinance = null;
 const liveQuoteCache = new Map(); // symbol -> { quote, expiry }
+const STOCK_QUOTE_CACHE_TTL_MS = 5000; // 5 seconds
 let leaderboardBroadcastPending = false;
+const LEADERBOARD_BROADCAST_DEBOUNCE_MS = 5000; // 5 seconds
 
 export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance } = {}) {
     _fetchTickerQuotes = fetchTickerQuotes || null;
@@ -399,7 +401,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
             const quotes = _fetchTickerQuotes ? await _fetchTickerQuotes() : [];
             let quote = quotes.find(q => q.symbol === symbol);
             if (!quote && _getYahooFinance) {
-                // Check 5-second cache
+                // Check cache before making API call
                 const cached = liveQuoteCache.get(symbol);
                 if (cached && Date.now() < cached.expiry) {
                     quote = cached.quote;
@@ -413,7 +415,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
                                 name: q.shortName || q.longName || symbol,
                                 price: parseFloat(q.regularMarketPrice.toFixed(2)),
                             };
-                            liveQuoteCache.set(symbol, { quote, expiry: Date.now() + 5000 });
+                            liveQuoteCache.set(symbol, { quote, expiry: Date.now() + STOCK_QUOTE_CACHE_TTL_MS });
                         }
                     } catch (e) { /* symbol not found */ }
                 }
@@ -460,7 +462,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
             const quotes = _fetchTickerQuotes ? await _fetchTickerQuotes() : [];
             let quote = quotes.find(q => q.symbol === symbol);
             if (!quote && _getYahooFinance) {
-                // Check 5-second cache
+                // Check cache before making API call
                 const cached = liveQuoteCache.get(symbol);
                 if (cached && Date.now() < cached.expiry) {
                     quote = cached.quote;
@@ -474,7 +476,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
                                 name: q.shortName || q.longName || symbol,
                                 price: parseFloat(q.regularMarketPrice.toFixed(2)),
                             };
-                            liveQuoteCache.set(symbol, { quote, expiry: Date.now() + 5000 });
+                            liveQuoteCache.set(symbol, { quote, expiry: Date.now() + STOCK_QUOTE_CACHE_TTL_MS });
                         }
                     } catch (e) { /* symbol not found */ }
                 }
@@ -1363,7 +1365,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
             const brainAge = Number(data.brainAge);
             if (!Number.isFinite(brainAge) || brainAge < 20 || brainAge > 80) return;
 
-            // Check 24-hour cooldown for daily test
+            // Check 24-hour cooldown for daily test (uses UTC timestamps)
             if (isDatabaseEnabled()) {
                 try {
                     const result = await query(
@@ -1374,7 +1376,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
                         const lastTest = new Date(result.rows[0].last_daily_test_at);
                         const hoursSince = (Date.now() - lastTest.getTime()) / (1000 * 60 * 60);
                         if (hoursSince < 24) {
-                            socket.emit('error', { message: 'Daily test already completed. Try again tomorrow!' });
+                            const hoursRemaining = Math.ceil(24 - hoursSince);
+                            socket.emit('error', { 
+                                message: `Daily test already completed. Available again in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}.` 
+                            });
                             return;
                         }
                     }
@@ -1425,7 +1430,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
                 setTimeout(() => {
                     io.emit('brain-leaderboard', getBrainLeaderboardSorted());
                     leaderboardBroadcastPending = false;
-                }, 5000);
+                }, LEADERBOARD_BROADCAST_DEBOUNCE_MS);
             }
 
             // Update per-game leaderboards from daily test games

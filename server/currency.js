@@ -66,7 +66,7 @@ export async function getBalancesBatch(names) {
         balanceMap[row.player_name] = Number(row.balance);
     }
     
-    // Fill in missing players with starting balance
+    // Fill in starting balance for players not yet in database
     for (const name of names) {
         if (!(name in balanceMap)) {
             balanceMap[name] = STARTING_BALANCE;

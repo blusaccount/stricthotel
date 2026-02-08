@@ -17,7 +17,7 @@ let pool = null;
 if (hasDatabase) {
     pool = new Pool({
         connectionString,
-        max: 20, // Max concurrent connections
+        max: 20, // Supports ~20 concurrent requests; adjust based on workload
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 5000,
         ssl: process.env.NODE_ENV === 'production' 
