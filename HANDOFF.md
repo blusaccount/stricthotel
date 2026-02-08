@@ -1,3 +1,23 @@
+# HANDOFF - Mäxchen Handlers Extraction
+
+## What Was Done
+- Extracted all Mäxchen game handlers from `server/socket-handlers.js` to `server/handlers/maexchen.js`
+- Created `registerMaexchenHandlers(socket, io, deps)` export function
+- Handlers extracted: `place-bet`, `start-game`, `roll`, `announce`, `challenge`, `believe-maexchen`
+- Maintained ALL original try-catch patterns and validation logic
+- Zero behavior changes - pure structural refactor
+
+## How to Verify
+1. `node --check server/socket-handlers.js`
+2. `node --check server/handlers/maexchen.js`
+3. `npm test` - all tests pass (same 3 pre-existing failures in lol-betting/lol-match-checker)
+4. Start server and play Mäxchen - all functionality works identically
+
+### Files Modified
+- `server/socket-handlers.js` - removed ~290 lines, added import and registration call
+- `server/handlers/maexchen.js` - NEW file with all Mäxchen handlers
+
+
 # HANDOFF - LoL Manual Check + Timeout Resolution
 
 ## What Was Done
