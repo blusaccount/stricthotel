@@ -1,3 +1,25 @@
+# HANDOFF - Large-screen layout & font-size improvements
+
+## What Was Done
+
+### Enhancement: Improved layout for large screens (>= 1024px)
+
+- Added `@media (min-width: 1024px)` queries across all pages
+- **theme.css**: Increased `#app` max-width from 600px to 900px, body font-size from 18px to 22px, padding from 20px to 30px
+- **index.html (lobby)**: Widened `menu-container` (800px -> 1000px), `game-grid` (600px -> 800px), increased font-size (12px -> 14px), title (20px -> 24px)
+- **Game pages** (lol-betting, stocks, strictbrain, turkish, shopping): Increased font-size (10px -> 13px), widened page containers
+- **watchparty**: Widened video wrapper (900px -> 1100px) and app container (960px -> 1200px)
+- **contacts.html**: Widened container (600px -> 900px)
+- **strict-club/club.css**: Widened club container (900px -> 1100px)
+
+### How to Verify
+
+1. Open any page on a screen >= 1024px wide
+2. Content should fill more horizontal space
+3. Font sizes should be larger and more readable
+4. On mobile/tablet (< 1024px), existing styling is unchanged
+
+### Previous Change
 # HANDOFF - Stock Game: Leaderboard character profile pictures
 
 ## What Was Done
