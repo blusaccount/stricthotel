@@ -470,18 +470,18 @@ setInterval(() => {
 
 // ============== START SERVER ==============
 
+// Initialise database schema before accepting connections
+try {
+    await initSchema();
+} catch (err) {
+    console.error('Database schema init error:', err);
+}
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
     console.log(`✓ StrictHotel Server: http://localhost:${PORT}`);
     if (!GAME_ENABLED) {
         console.log('⚠ GAME_ENABLED=false: stock game APIs and socket trades are disabled');
-    }
-
-    // Initialise database schema (creates tables if they don't exist)
-    try {
-        await initSchema();
-    } catch (err) {
-        console.error('Database schema init error:', err.message);
     }
 
     // Discord Bot starten
