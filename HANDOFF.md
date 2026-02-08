@@ -1,3 +1,38 @@
+# HANDOFF - Loop Machine: Player Registration for Global Online Status
+
+## What Was Done
+
+### Problem Fixed
+Players in the Loop Machine were not properly registered in the global online players list. The Loop Machine only sent `loop-join` on connection but did not call `register-player` like other games and pages. This meant:
+- Players were added to `loopState.listeners` (local to Loop Machine)
+- But NOT added to the global `onlinePlayers` Map with correct `game` field
+- The Contacts page and other areas could not see them as online
+
+### Changes Made
+
+**Fix: Add `register-player` emission (`games/loop-machine/js/game.js`)**
+- Modified the `socket.on('connect', ...)` handler to emit `register-player` before `loop-join`
+- Retrieves player name from `localStorage.getItem('stricthotel-name')`
+- Checks for character data from `window.MaexchenCreator` or `window.StrictHotelCreator`
+- Emits `register-player` with `{ name, character, game: 'loop-machine' }`
+- Used ES6 shorthand property syntax for cleaner code
+
+### How to Verify
+
+1. Set a player name in localStorage (via lobby or any game)
+2. Navigate to Loop Machine (`/games/loop-machine/`)
+3. Open Contacts page in another tab (`/contacts.html`)
+4. Verify the player appears in Contacts with status "loop-machine"
+5. Global online player count includes Loop Machine users
+
+### Files Modified
+- `games/loop-machine/js/game.js` — Added `register-player` emission in socket connect handler
+
+### Security Summary
+- CodeQL scan completed: 0 alerts found
+- No security vulnerabilities introduced
+
+## Previous Changes
 # HANDOFF - LoL Betting: Stop Retrying on Invalid API Key (401/403)
 
 ## What Was Done
