@@ -305,10 +305,12 @@ export function cleanupRateLimiters() {
 
 let _fetchTickerQuotes = null;
 let _getYahooFinance = null;
+let _stockGameEnabled = true;
 
-export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance } = {}) {
+export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance, isStockGameEnabled = true } = {}) {
     _fetchTickerQuotes = fetchTickerQuotes || null;
     _getYahooFinance = getYahooFinance || null;
+    _stockGameEnabled = isStockGameEnabled !== false;
     io.on('connection', (socket) => {
         console.log(`Connected: ${socket.id}`);
 
@@ -370,6 +372,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
         // --- Stock Game: Buy ---
         socket.on('stock-buy', async (data) => { try {
             if (!checkRateLimit(socket.id)) return;
+            if (!_stockGameEnabled) {
+                emitStockError(socket, 'GAME_DISABLED', 'Stock game is disabled by server config');
+                return;
+            }
             const player = onlinePlayers.get(socket.id);
             if (!player) return;
             if (!data || typeof data !== 'object') return;
@@ -425,6 +431,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
         // --- Stock Game: Sell ---
         socket.on('stock-sell', async (data) => { try {
             if (!checkRateLimit(socket.id)) return;
+            if (!_stockGameEnabled) {
+                emitStockError(socket, 'GAME_DISABLED', 'Stock game is disabled by server config');
+                return;
+            }
             const player = onlinePlayers.get(socket.id);
             if (!player) return;
             if (!data || typeof data !== 'object') return;
@@ -479,6 +489,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
         // --- Stock Game: Get Portfolio ---
         socket.on('stock-get-portfolio', async () => { try {
             if (!checkRateLimit(socket.id)) return;
+            if (!_stockGameEnabled) {
+                emitStockError(socket, 'GAME_DISABLED', 'Stock game is disabled by server config');
+                return;
+            }
             const player = onlinePlayers.get(socket.id);
             if (!player) return;
 
@@ -490,6 +504,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
         // --- Stock Game: Get All Players' Portfolios (Leaderboard) ---
         socket.on('stock-get-leaderboard', async () => { try {
             if (!checkRateLimit(socket.id)) return;
+            if (!_stockGameEnabled) {
+                emitStockError(socket, 'GAME_DISABLED', 'Stock game is disabled by server config');
+                return;
+            }
             const player = onlinePlayers.get(socket.id);
             if (!player) return;
 
