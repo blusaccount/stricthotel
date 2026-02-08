@@ -388,6 +388,24 @@ Out of scope: new instruments, timing model changes, persistence.
 1. Add shared loop bar limits and dynamic row sizing on the server.
 2. Add bars control + dynamic rendering/playback on the client.
 3. Verify with syntax checks and manual UI screenshot.
+## ExecPlan - LoL Bet Resolution Reliability
+
+## Purpose
+Reduce false "No new match found" outcomes and transient Riot API failures that block LoL bet resolution.
+
+## Scope
+In scope: Riot API retry/backoff for transient upstream errors, broader match-history lookup for bet checks, targeted tests.
+Out of scope: new admin tooling or UI redesign.
+
+## Context
+- `server/riot-api.js`
+- `server/lol-match-checker.js`
+- `server/__tests__/lol-match-checker.test.js`
+
+## Plan of Work
+1. Add bounded retry/backoff for transient Riot API failures (5xx/network).
+2. Increase match-history depth used by background/manual bet checks.
+3. Add tests for baseline-not-in-window/manual resolution behavior.
 4. Update handoff notes.
 
 ## Progress
@@ -412,3 +430,15 @@ Out of scope: new instruments, timing model changes, persistence.
 ## Outcomes
 Shipped variable bars (1-8) for Loop Machine across server sync, client playback/rendering, and controls.
 Automated checks passed via syntax validation; full runtime/manual verification is blocked here by missing local dependencies.
+- None yet.
+
+## Decision Log
+- Decision: Retry only transient failures (network + 5xx), not auth/rate-limit errors.
+  Rationale: avoids masking configuration errors while improving reliability.
+  Date: 2026-02-08
+
+## Verification
+- `npm test -- server/__tests__/lol-match-checker.test.js`
+
+## Outcomes
+Shipped with an additional follow-up: per-bet match selection with timestamp-aware scanning when baseline is outside the history window.
