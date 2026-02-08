@@ -87,6 +87,13 @@ create table if not exists lol_bets (
   resolved_at timestamptz
 );
 
+-- backfill columns that may be missing on databases created before these were added
+alter table lol_bets add column if not exists puuid text;
+alter table lol_bets add column if not exists last_match_id text;
+alter table lol_bets add column if not exists game_id text;
+alter table lol_bets add column if not exists result boolean;
+alter table lol_bets add column if not exists resolved_at timestamptz;
+
 create index if not exists lol_bets_status_idx
   on lol_bets (status, created_at desc);
 
