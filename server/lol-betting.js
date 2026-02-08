@@ -176,6 +176,9 @@ export async function getPendingBetsForChecking() {
  * These bets were placed when the Riot API was unavailable and need backfilling
  */
 export async function getPendingBetsWithoutPuuid() {
+    // Limit batch size to prevent excessive API calls in a single cycle
+    const MAX_BACKFILL_BATCH_SIZE = 100;
+    
     if (!isDatabaseEnabled()) {
         return betsMemory
             .filter(bet => bet.status === 'pending' && (!bet.puuid || !bet.lastMatchId))
@@ -187,7 +190,8 @@ export async function getPendingBetsWithoutPuuid() {
          from lol_bets
          where status = 'pending' and (puuid is null or last_match_id is null)
          order by created_at asc
-         limit 100`
+         limit $1`,
+        [MAX_BACKFILL_BATCH_SIZE]
     );
 
     return result.rows.map(row => ({

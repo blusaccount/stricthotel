@@ -54,6 +54,9 @@ export function stopMatchChecker() {
 
 /**
  * Backfill PUUID and lastMatchId for bets that were placed without them
+ * NOTE: This runs on every polling cycle. For production systems with high volume,
+ * consider adding a retry counter or last_attempt timestamp to avoid repeatedly
+ * attempting to backfill bets that consistently fail validation.
  */
 async function backfillMissingPuuids() {
     try {

@@ -1848,6 +1848,9 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
         } });
 
         // --- Admin Resolve LoL Bet ---
+        // NOTE: This endpoint currently has no admin permission check.
+        // Any logged-in player can resolve bets. In production, add role-based
+        // authorization (e.g., check if player.role === 'admin') before allowing resolution.
         socket.on('lol-admin-resolve-bet', async (data) => { try {
             if (!checkRateLimit(socket, 5)) {
                 socket.emit('lol-bet-error', { message: 'Too many requests, please wait' });
