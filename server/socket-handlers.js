@@ -41,6 +41,7 @@ import {
     getLeaderboardSnapshot,
     getTradePerformanceLeaderboard
 } from './stock-game.js';
+import { recordSnapshot, getHistory } from './portfolio-history.js';
 import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
 import { placeBet, getActiveBets, getPlayerBets } from './lol-betting.js';
 
@@ -409,6 +410,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             socket.emit('balance-update', { balance: result.newBalance });
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            recordSnapshot(player.name, snapshot.totalValue, result.newBalance);
         } catch (err) { console.error('stock-buy error:', err.message); } });
 
         // --- Stock Game: Sell ---
@@ -454,6 +456,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             socket.emit('balance-update', { balance: result.newBalance });
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            recordSnapshot(player.name, snapshot.totalValue, result.newBalance);
         } catch (err) { console.error('stock-sell error:', err.message); } });
 
         // --- Stock Game: Get Portfolio ---
@@ -469,7 +472,18 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             const quotes = _fetchTickerQuotes ? await _fetchTickerQuotes() : [];
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            const cash = await getBalance(player.name);
+            recordSnapshot(player.name, snapshot.totalValue, cash);
         } catch (err) { console.error('stock-get-portfolio error:', err.message); } });
+
+        // --- Stock Game: Get Portfolio History ---
+        socket.on('stock-get-portfolio-history', async () => { try {
+            if (!checkRateLimit(socket)) return;
+            if (!_stockGameEnabled) return;
+            const player = onlinePlayers.get(socket.id);
+            if (!player) return;
+            socket.emit('stock-portfolio-history', getHistory(player.name));
+        } catch (err) { console.error('stock-get-portfolio-history error:', err.message); } });
 
         // --- Stock Game: Get All Players' Portfolios (Leaderboard) ---
         socket.on('stock-get-leaderboard', async () => { try {
