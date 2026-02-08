@@ -21,6 +21,7 @@ import { getDailyLesson, buildQuiz, getDailySeed } from './turkish-lessons.js';
 import { recordDailyCompletion, getTurkishLeaderboard } from './turkish-streaks.js';
 import { startDiscordBot } from './discord-bot.js';
 import { initSchema } from './db.js';
+import { startMatchChecker, stopMatchChecker } from './lol-match-checker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -484,10 +485,36 @@ server.listen(PORT, async () => {
         console.log('⚠ GAME_ENABLED=false: stock game APIs and socket trades are disabled');
     }
 
+    // Start LoL match checker
+    try {
+        startMatchChecker(io);
+    } catch (err) {
+        console.error('LoL Match Checker error:', err.message);
+    }
+
     // Discord Bot starten
     try {
         await startDiscordBot(rootDir);
     } catch (err) {
         console.error('Discord Bot Fehler:', err.message);
     }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    stopMatchChecker();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    stopMatchChecker();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 });

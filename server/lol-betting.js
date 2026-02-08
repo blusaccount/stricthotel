@@ -9,7 +9,7 @@ let nextBetId = 1;
 /**
  * Place a bet on a League of Legends player's next match
  */
-export async function placeBet(playerName, lolUsername, amount, betOnWin, client = null) {
+export async function placeBet(playerName, lolUsername, amount, betOnWin, puuid = null, lastMatchId = null, client = null) {
     if (typeof playerName !== 'string' || !playerName) {
         throw new Error('Invalid player name');
     }
@@ -30,6 +30,8 @@ export async function placeBet(playerName, lolUsername, amount, betOnWin, client
             lolUsername,
             amount,
             betOnWin,
+            puuid,
+            lastMatchId,
             status: 'pending',
             createdAt: new Date().toISOString()
         };
@@ -53,10 +55,10 @@ export async function placeBet(playerName, lolUsername, amount, betOnWin, client
 
     // Insert bet
     const result = await queryRunner.query(
-        `insert into lol_bets (player_id, player_name, lol_username, bet_amount, bet_on_win, status)
-         values ($1, $2, $3, $4, $5, 'pending')
-         returning id, player_name, lol_username, bet_amount, bet_on_win, status, created_at`,
-        [playerId, playerName, lolUsername, amount, betOnWin]
+        `insert into lol_bets (player_id, player_name, lol_username, bet_amount, bet_on_win, puuid, last_match_id, status)
+         values ($1, $2, $3, $4, $5, $6, $7, 'pending')
+         returning id, player_name, lol_username, bet_amount, bet_on_win, puuid, last_match_id, status, created_at`,
+        [playerId, playerName, lolUsername, amount, betOnWin, puuid, lastMatchId]
     );
 
     return {
@@ -65,6 +67,8 @@ export async function placeBet(playerName, lolUsername, amount, betOnWin, client
         lolUsername: result.rows[0].lol_username,
         amount: Number(result.rows[0].bet_amount),
         betOnWin: result.rows[0].bet_on_win,
+        puuid: result.rows[0].puuid,
+        lastMatchId: result.rows[0].last_match_id,
         status: result.rows[0].status,
         createdAt: result.rows[0].created_at
     };
@@ -130,6 +134,37 @@ export async function getPlayerBets(playerName, limit = 20) {
         result: row.result,
         createdAt: row.created_at,
         resolvedAt: row.resolved_at
+    }));
+}
+
+/**
+ * Get pending bets that have PUUID and last match ID for checking
+ */
+export async function getPendingBetsForChecking() {
+    if (!isDatabaseEnabled()) {
+        return betsMemory
+            .filter(bet => bet.status === 'pending' && bet.puuid && bet.lastMatchId)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    const result = await query(
+        `select id, player_id, player_name, lol_username, bet_amount, bet_on_win, puuid, last_match_id, created_at
+         from lol_bets
+         where status = 'pending' and puuid is not null and last_match_id is not null
+         order by created_at asc
+         limit 500`
+    );
+
+    return result.rows.map(row => ({
+        id: row.id,
+        playerId: row.player_id,
+        playerName: row.player_name,
+        lolUsername: row.lol_username,
+        amount: Number(row.bet_amount),
+        betOnWin: row.bet_on_win,
+        puuid: row.puuid,
+        lastMatchId: row.last_match_id,
+        createdAt: row.created_at
     }));
 }
 

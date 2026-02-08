@@ -44,7 +44,7 @@ import {
 import { recordSnapshot, getHistory } from './portfolio-history.js';
 import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
 import { placeBet, getActiveBets, getPlayerBets } from './lol-betting.js';
-import { parseRiotId, validateRiotId } from './riot-api.js';
+import { parseRiotId, validateRiotId, getMatchHistory, isRiotApiEnabled } from './riot-api.js';
 
 // ============== INPUT VALIDATION ==============
 
@@ -1651,7 +1651,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             }
             const playerName = player.name;
 
-            const { lolUsername, amount, betOnWin } = data;
+            const { lolUsername, amount, betOnWin, puuid } = data;
 
             // Validate Riot ID format (API lookup already happened in lol-validate-username)
             const parsed = parseRiotId(lolUsername);
@@ -1679,6 +1679,20 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 return;
             }
 
+            // Fetch last match ID if API is enabled and puuid is provided
+            let lastMatchId = null;
+            if (isRiotApiEnabled() && puuid && typeof puuid === 'string') {
+                try {
+                    const matchHistory = await getMatchHistory(puuid, 1);
+                    if (matchHistory.length > 0) {
+                        lastMatchId = matchHistory[0];
+                    }
+                } catch (matchErr) {
+                    console.warn(`[LoL Bet] Could not fetch match history for ${resolvedName}:`, matchErr.message);
+                    // Continue without lastMatchId - bet can still be placed
+                }
+            }
+
             let newBalance;
             let bet;
 
@@ -1693,7 +1707,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                     if (bal === null) {
                         return { ok: false };
                     }
-                    const b = await placeBet(playerName, resolvedName, betAmount, betOnWin, client);
+                    const b = await placeBet(playerName, resolvedName, betAmount, betOnWin, puuid, lastMatchId, client);
                     return { ok: true, newBalance: bal, bet: b };
                 });
                 if (!txResult.ok) {
@@ -1713,7 +1727,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                     return;
                 }
                 try {
-                    bet = await placeBet(playerName, resolvedName, betAmount, betOnWin);
+                    bet = await placeBet(playerName, resolvedName, betAmount, betOnWin, puuid, lastMatchId);
                 } catch (betErr) {
                     // Refund the deducted amount on failure
                     await addBalance(playerName, betAmount, 'lol_bet_refund', {
