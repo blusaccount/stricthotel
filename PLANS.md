@@ -603,3 +603,81 @@ Out of scope: new admin tooling, UI changes, or major refactors.
 
 ## Outcomes
 - Pending.
+
+
+---
+
+## ExecPlan - Socket Handlers Refactor
+
+## Purpose
+Split the monolithic `server/socket-handlers.js` (~2269 lines / ~108 KB) into domain-specific handler modules while maintaining 100% behavior compatibility. This addresses the biggest maintenance burden in the codebase.
+
+## Scope
+In scope: structural refactor of socket-handlers.js into separate modules by feature domain.
+Out of scope: behavior changes, new features, gameplay modifications, fixing pre-existing test failures.
+
+## Context
+- `server/socket-handlers.js` (main file to refactor)
+- `server/handlers/` (new directory for handler modules)
+- All existing socket handler tests in `server/__tests__/`
+
+## Plan of Work
+1. Create `server/handlers/` directory structure
+2. Extract each domain into its own handler module:
+   - lobby.js - player registration, room management, chat, emotes
+   - maexchen.js - Mäxchen game handlers
+   - brain-versus.js - StrictBrain game and leaderboards
+   - stocks.js - stock trading and portfolio
+   - lol-betting.js - LoL betting and match checking
+   - pictochat.js - drawing and canvas handlers
+   - soundboard.js - soundboard handlers
+   - currency.js - balance, diamonds, make-it-rain, shop
+   - strict-club.js - music player handlers
+   - loop-machine.js - loop machine handlers
+   - strictly7s.js - slot machine handlers
+   - watchparty.js - watch party video sync
+3. Create shared deps object with utilities and state
+4. Consolidate disconnect handlers into cleanup functions
+5. Refactor socket-handlers.js into thin orchestrator
+6. Validate all modules with syntax checks
+7. Run full test suite (must maintain 159/162 passing)
+
+## Progress
+- [x] Read HANDOFF.md and understand recent changes
+- [x] Analyze current socket-handlers.js structure
+- [x] Create execution plan
+- [x] Create handlers directory
+- [ ] Create individual handler modules (in progress)
+- [ ] Refactor socket-handlers.js orchestrator
+- [ ] Syntax validation
+- [ ] Run tests
+- [ ] Update HANDOFF.md
+
+## Surprises and Discoveries
+- File contains 2269 lines with handlers for 12+ different domains
+- 3 pre-existing test failures in lol-betting and lol-match-checker (not in scope to fix)
+- Disconnect handler has complex multi-domain cleanup logic
+- Rate limiting uses both socket-level and IP-level tracking
+
+## Decision Log
+- Decision: Keep rate limiting and cooldown logic in socket-handlers.js
+  Rationale: Shared state accessed by orchestrator, not domain-specific
+  Date: 2026-02-08
+
+- Decision: Pass deps object to each handler registration function
+  Rationale: Allows handlers to access shared utilities without circular imports
+  Date: 2026-02-08
+
+- Decision: Create per-domain cleanup functions for disconnect handler
+  Rationale: Keeps disconnect handler maintainable while preserving all cleanup logic
+  Date: 2026-02-08
+
+## Verification
+- `node --check server/socket-handlers.js`
+- `node --check` on all handler modules in `server/handlers/`
+- `npm test` - must show 159/162 passing (3 pre-existing failures)
+- Manual review of file sizes (socket-handlers.js should be < 500 lines)
+
+## Outcomes
+- Pending.
+
