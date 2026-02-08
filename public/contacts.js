@@ -51,7 +51,7 @@
             // Get diamond count for this player
             var diamonds = playerDiamonds.get(p.name) || 0;
             var diamondHtml = diamonds > 0 
-                ? '<span class="contact-diamonds">💎×' + diamonds + '</span>' 
+                ? '<span class="contact-diamonds"><img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + diamonds + '</span>' 
                 : '';
             
             return '<div class="contact-card" data-name="' + escapeAttr(p.name) + '">' +
@@ -64,9 +64,9 @@
                 '</div>';
         }).join('');
         
-        // Request diamond data for all players
+        // Request diamond data for all players (without opening modal)
         players.forEach(function(p) {
-            socket.emit('get-player-character', { name: p.name });
+            socket.emit('get-player-diamonds', { name: p.name });
         });
     });
 
@@ -82,7 +82,35 @@
         });
     }
 
-    // --- Receive character details ---
+    // --- Receive diamond counts only (no modal) ---
+    socket.on('player-diamonds', function (data) {
+        if (!data || !data.name) return;
+        
+        // Store diamond count
+        if (typeof data.diamonds === 'number') {
+            playerDiamonds.set(data.name, data.diamonds);
+            // Update the display if the contact list is already rendered
+            var card = document.querySelector('.contact-card[data-name="' + escapeAttr(data.name) + '"]');
+            if (card) {
+                var nameEl = card.querySelector('.contact-name');
+                if (nameEl) {
+                    // Remove existing diamond display
+                    var existingDiamond = nameEl.querySelector('.contact-diamonds');
+                    if (existingDiamond) existingDiamond.remove();
+                    
+                    // Add new diamond display if > 0
+                    if (data.diamonds > 0) {
+                        var diamondSpan = document.createElement('span');
+                        diamondSpan.className = 'contact-diamonds';
+                        diamondSpan.innerHTML = '<img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + data.diamonds;
+                        nameEl.appendChild(diamondSpan);
+                    }
+                }
+            }
+        }
+    });
+
+    // --- Receive character details (and show modal) ---
     socket.on('player-character', function (data) {
         if (!data || !data.name) return;
         
@@ -102,7 +130,7 @@
                     if (data.diamonds > 0) {
                         var diamondSpan = document.createElement('span');
                         diamondSpan.className = 'contact-diamonds';
-                        diamondSpan.textContent = '💎×' + data.diamonds;
+                        diamondSpan.innerHTML = '<img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + data.diamonds;
                         nameEl.appendChild(diamondSpan);
                     }
                 }

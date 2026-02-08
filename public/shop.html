@@ -46,6 +46,18 @@
             margin-bottom: 12px;
             padding-bottom: 10px;
             border-bottom: 3px solid var(--ds-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .title-diamond {
+            width: 28px;
+            height: 28px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            filter: drop-shadow(0 0 4px #33d9ff);
         }
 
         .shop-balances {
@@ -69,6 +81,14 @@
 
         .balance-icon {
             font-size: 1.5rem;
+        }
+        
+        .diamond-balance-icon img {
+            width: 24px;
+            height: 24px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            filter: drop-shadow(0 0 3px #33d9ff);
         }
 
         .balance-label {
@@ -108,6 +128,13 @@
             font-size: 4rem;
             margin-bottom: 12px;
             filter: drop-shadow(0 0 10px var(--diamond-blue));
+        }
+        
+        .diamond-item-icon img {
+            width: 64px;
+            height: 64px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
 
         .shop-item-name {
@@ -224,7 +251,7 @@
 </head>
 <body>
     <div class="shop-container">
-        <h1 class="shop-title">💎 DIAMOND SHOP 💎</h1>
+        <h1 class="shop-title"><img src="/assets/diamond.png" class="title-diamond" alt="💎"> DIAMOND SHOP <img src="/assets/diamond.png" class="title-diamond" alt="💎"></h1>
 
         <div class="shop-balances">
             <div class="balance-card">
@@ -235,7 +262,7 @@
                 </div>
             </div>
             <div class="balance-card">
-                <div class="balance-icon">💎</div>
+                <div class="balance-icon diamond-balance-icon"><img src="/assets/diamond.png" alt="💎"></div>
                 <div>
                     <div class="balance-label">Diamonds</div>
                     <div class="balance-amount" id="diamond-balance">0</div>
@@ -245,7 +272,7 @@
 
         <div class="shop-grid">
             <div class="shop-item">
-                <div class="shop-item-icon">💎</div>
+                <div class="shop-item-icon diamond-item-icon"><img src="/assets/diamond.png" alt="💎"></div>
                 <div class="shop-item-name">Diamond</div>
                 <div class="shop-item-price">🪙 25 Coins</div>
                 <div class="shop-item-owned">Owned: <span id="diamonds-owned">0</span></div>
