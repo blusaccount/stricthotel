@@ -78,6 +78,44 @@ Out of scope: DB schema changes, UI changes, admin tooling.
 
 ---
 
+## ExecPlan - Strictly7s Slot Machine
+
+## Purpose
+Add a new StrictCoins slot machine game with server-side spins and a retro DS-style UI.
+
+## Scope
+In scope: new game page under `games/strictly7s`, lobby tile, server socket handler, and validation.  
+Out of scope: DB schema changes, leaderboards, admin controls.
+
+## Context
+- `public/index.html`
+- `server/socket-handlers.js`
+- `server/socket-utils.js`
+- `games/strictly7s/index.html`
+- `games/strictly7s/js/game.js`
+
+## Plan of Work
+1. Add Strictly7s client page (UI, bet options, spin animation, sounds).
+2. Implement server-side spin handler with bet validation + payouts.
+3. Wire lobby tile + register-player game type.
+4. Document handoff and verification steps.
+
+## Progress
+- [x] Start plan
+- [x] Implement changes
+- [ ] Verify behavior
+- [x] Update handoff notes
+
+## Verification
+- `node --check server/socket-handlers.js`
+- `node --check server/socket-utils.js`
+- Manual: open lobby, click Strictly7s, spin with valid bets, verify balance updates + win/loss messaging.
+
+## Outcomes
+- Pending.
+
+---
+
 ## ExecPlan - Security + Performance Hardening
 
 ## Purpose

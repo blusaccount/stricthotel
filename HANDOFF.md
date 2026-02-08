@@ -1,3 +1,28 @@
+# HANDOFF - Strictly7s Slot Machine
+
+## What Was Done
+- Added Strictly7s slot machine page with DS-style UI, bet buttons, and payout table.
+- Implemented server-side spin logic with weighted symbols and payouts.
+- Added Strictly7s lobby tile and game type validation.
+- Client registers as `strictly7s`, requests balance, and plays WebAudio tones for spin/win/loss.
+ - Tuned payouts to target ~93% RTP (slight house edge).
+
+## How to Verify
+1. `node --check server/socket-handlers.js`
+2. `node --check server/socket-utils.js`
+3. Open lobby, click Strictly7s tile, select a bet, and spin:
+   - Balance should decrease by bet amount.
+   - Wins should pay out according to the table.
+   - Two CHERRY (any) should pay 2x if not three-of-a-kind.
+
+### Files Modified
+- `games/strictly7s/index.html`
+- `games/strictly7s/js/game.js`
+- `server/socket-handlers.js`
+- `server/socket-utils.js`
+- `public/index.html`
+- `PLANS.md`
+
 # HANDOFF - LoL Bet Resolution Reset (Timestamp-Only)
 
 ## What Was Done
