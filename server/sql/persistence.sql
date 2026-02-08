@@ -79,6 +79,8 @@ create table if not exists lol_bets (
   bet_amount numeric(14,2) not null check (bet_amount > 0),
   bet_on_win boolean not null,
   status text not null default 'pending',
+  puuid text,
+  last_match_id text,
   game_id text,
   result boolean,
   created_at timestamptz not null default now(),

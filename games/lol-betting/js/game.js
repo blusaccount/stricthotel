@@ -6,6 +6,7 @@ let playerBalance = 0;
 let selectedBetType = null;
 let usernameValidated = false;
 let validatedRiotId = null;
+let validatedPuuid = null;
 
 // Constants
 const NAME_KEY = 'stricthotel-name';
@@ -72,6 +73,7 @@ function setupEventListeners() {
     lolUsernameInput.addEventListener('input', () => {
         usernameValidated = false;
         validatedRiotId = null;
+        validatedPuuid = null;
         validationStatus.textContent = '';
         validationStatus.className = 'validation-status';
         updateValidateButton();
@@ -145,12 +147,14 @@ socket.on('lol-username-result', (data) => {
     if (data.valid) {
         usernameValidated = true;
         validatedRiotId = data.gameName + '#' + data.tagLine;
+        validatedPuuid = data.puuid || null;
         lolUsernameInput.value = validatedRiotId;
         validationStatus.textContent = '✓ ' + validatedRiotId + ' found';
         validationStatus.className = 'validation-status valid';
     } else {
         usernameValidated = false;
         validatedRiotId = null;
+        validatedPuuid = null;
         validationStatus.textContent = '✗ ' + (data.reason || 'Not found');
         validationStatus.className = 'validation-status invalid';
     }
@@ -189,7 +193,8 @@ function handleBetSubmit(e) {
     socket.emit('lol-place-bet', {
         lolUsername: validatedRiotId,
         amount: amount,
-        betOnWin: selectedBetType
+        betOnWin: selectedBetType,
+        puuid: validatedPuuid
     });
 }
 
@@ -221,6 +226,7 @@ socket.on('lol-bet-placed', (data) => {
     selectedBetType = null;
     usernameValidated = false;
     validatedRiotId = null;
+    validatedPuuid = null;
     validationStatus.textContent = '';
     validationStatus.className = 'validation-status';
     submitBtn.disabled = true;
@@ -241,6 +247,33 @@ socket.on('lol-bet-error', (data) => {
 // Active bets update
 socket.on('lol-bets-update', (data) => {
     renderBetsList(data.bets);
+});
+
+// Bet resolved notification
+socket.on('lol-bet-resolved', (data) => {
+    const { playerName, wonBet, payout, lolUsername, matchId } = data;
+    
+    // Only show notification if this is our bet
+    const myName = localStorage.getItem(NAME_KEY) || '';
+    if (playerName !== myName) {
+        return; // Not our bet, ignore
+    }
+    
+    // Pass structured data to notification function
+    showBetResolutionNotification({
+        wonBet,
+        payout,
+        lolUsername
+    });
+    
+    // Refresh balance if provided
+    if (data.newBalance !== undefined) {
+        playerBalance = data.newBalance;
+        balanceDisplay.textContent = `💰 ${playerBalance.toFixed(0)} SC`;
+    }
+    
+    // Request updated bets list
+    socket.emit('lol-get-bets');
 });
 
 // ============== UI RENDERING ==============
@@ -289,6 +322,42 @@ function showSuccessMessage() {
     setTimeout(() => {
         document.body.removeChild(successDiv);
     }, 2000);
+}
+
+function showBetResolutionNotification(data) {
+    const { wonBet, payout, lolUsername } = data;
+    
+    const notificationDiv = document.createElement('div');
+    notificationDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: ${wonBet ? '#4caf50' : '#f44336'};
+        color: white;
+        padding: 30px 50px;
+        border: 3px solid white;
+        font-size: 1.3em;
+        z-index: 1000;
+        text-align: center;
+        max-width: 80%;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    `;
+    
+    // Build message safely using textContent
+    const messageDiv = document.createElement('div');
+    if (wonBet) {
+        messageDiv.textContent = `🎉 You won ${payout.toFixed(0)} SC! ${lolUsername} won their game!`;
+    } else {
+        messageDiv.textContent = `💀 You lost your bet. ${lolUsername} lost their game.`;
+    }
+    
+    notificationDiv.appendChild(messageDiv);
+    document.body.appendChild(notificationDiv);
+    
+    setTimeout(() => {
+        document.body.removeChild(notificationDiv);
+    }, 5000);
 }
 
 function escapeHtml(text) {
