@@ -1,6 +1,26 @@
-# HANDOFF - Implement LoL Bet Resolution with Riot Match v5 API
+# HANDOFF - Fix lol-place-bet error: missing puuid column
 
 ## What Was Done
+
+### Fix: Add ALTER TABLE migration for lol_bets columns
+
+The `lol_bets` table was created on existing databases before the `puuid`, `last_match_id`, `game_id`, `result`, and `resolved_at` columns were added to the schema. Because the schema uses `CREATE TABLE IF NOT EXISTS`, these columns were never added to the existing table, causing `column "puuid" of relation "lol_bets" does not exist` when placing bets.
+
+Added `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements in `server/sql/persistence.sql` after the `CREATE TABLE` block. These are idempotent and will add any missing columns on databases created before the columns were introduced.
+
+### Files Changed
+- `server/sql/persistence.sql` — Added `ALTER TABLE` statements to backfill missing columns
+
+### How to Verify
+1. Deploy the server against the production database
+2. The `initSchema()` call on startup will run the `ALTER TABLE` statements
+3. Place a LoL bet — the `puuid` column error should be resolved
+
+---
+
+# Previous Handoff — Implement LoL Bet Resolution with Riot Match v5 API
+
+## What Was Done (Prior)
 
 ### Feature: Automatic bet resolution when LoL games complete
 
