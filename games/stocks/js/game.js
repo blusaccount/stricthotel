@@ -552,6 +552,132 @@
         socket.emit('stock-get-leaderboard');
     });
 
+    // --- Portfolio Performance Chart ---
+    var chartCanvas = $('portfolio-chart');
+    var chartEmpty = $('chart-empty');
+    var portfolioChart = null;
+
+    socket.on('stock-portfolio-history', function (data) {
+        if (!Array.isArray(data) || data.length < 2) {
+            chartCanvas.style.display = 'none';
+            chartEmpty.style.display = 'block';
+            return;
+        }
+        chartEmpty.style.display = 'none';
+        chartCanvas.style.display = 'block';
+        renderChart(data);
+    });
+
+    function renderChart(snapshots) {
+        var labels = snapshots.map(function (s) {
+            var d = new Date(s.ts);
+            return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+        });
+        var netWorthData = snapshots.map(function (s) { return s.netWorth; });
+        var portfolioData2 = snapshots.map(function (s) { return s.portfolioValue; });
+        var cashData = snapshots.map(function (s) { return s.cash; });
+
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+        var textColor = isDark ? '#a0a0a0' : '#666666';
+
+        if (portfolioChart) {
+            portfolioChart.data.labels = labels;
+            portfolioChart.data.datasets[0].data = netWorthData;
+            portfolioChart.data.datasets[1].data = portfolioData2;
+            portfolioChart.data.datasets[2].data = cashData;
+            portfolioChart.options.scales.x.ticks.color = textColor;
+            portfolioChart.options.scales.y.ticks.color = textColor;
+            portfolioChart.options.scales.x.grid.color = gridColor;
+            portfolioChart.options.scales.y.grid.color = gridColor;
+            portfolioChart.update('none');
+            return;
+        }
+
+        portfolioChart = new Chart(chartCanvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Net Worth',
+                        data: netWorthData,
+                        borderColor: isDark ? '#eaeaea' : '#222222',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 4,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Portfolio',
+                        data: portfolioData2,
+                        borderColor: isDark ? '#6699cc' : '#336699',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        pointRadius: 1,
+                        pointHoverRadius: 3,
+                        tension: 0.3,
+                        borderDash: [4, 2]
+                    },
+                    {
+                        label: 'Cash',
+                        data: cashData,
+                        borderColor: isDark ? '#88aa88' : '#448844',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        pointRadius: 1,
+                        pointHoverRadius: 3,
+                        tension: 0.3,
+                        borderDash: [2, 2]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: { family: "'Press Start 2P', monospace", size: 7 },
+                            color: textColor,
+                            boxWidth: 12,
+                            padding: 8
+                        }
+                    },
+                    tooltip: {
+                        titleFont: { family: "'Press Start 2P', monospace", size: 7 },
+                        bodyFont: { family: "'Press Start 2P', monospace", size: 7 },
+                        callbacks: {
+                            label: function (ctx) {
+                                return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            font: { family: "'Press Start 2P', monospace", size: 6 },
+                            color: textColor,
+                            maxTicksLimit: 8
+                        },
+                        grid: { color: gridColor }
+                    },
+                    y: {
+                        ticks: {
+                            font: { family: "'Press Start 2P', monospace", size: 6 },
+                            color: textColor,
+                            callback: function (v) { return '$' + v; }
+                        },
+                        grid: { color: gridColor }
+                    }
+                }
+            }
+        });
+    }
+
     // --- Init ---
     renderMarket();
     fetchMarket();
@@ -559,12 +685,14 @@
         fetchMarket();
         socket.emit('stock-get-portfolio');
         socket.emit('stock-get-leaderboard');
+        socket.emit('stock-get-portfolio-history');
     }, 60 * 1000);
 
     socket.on('connect', function () {
         setTimeout(function () {
             socket.emit('stock-get-portfolio');
             socket.emit('stock-get-leaderboard');
+            socket.emit('stock-get-portfolio-history');
         }, 500);
     });
 })();
