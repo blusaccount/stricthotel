@@ -41,7 +41,9 @@ import {
     getLeaderboardSnapshot,
     getTradePerformanceLeaderboard
 } from './stock-game.js';
+import { recordSnapshot, getHistory } from './portfolio-history.js';
 import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
+import { placeBet, getActiveBets, getPlayerBets } from './lol-betting.js';
 
 // ============== INPUT VALIDATION ==============
 
@@ -408,6 +410,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             socket.emit('balance-update', { balance: result.newBalance });
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            recordSnapshot(player.name, snapshot.totalValue, result.newBalance);
         } catch (err) { console.error('stock-buy error:', err.message); } });
 
         // --- Stock Game: Sell ---
@@ -453,6 +456,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             socket.emit('balance-update', { balance: result.newBalance });
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            recordSnapshot(player.name, snapshot.totalValue, result.newBalance);
         } catch (err) { console.error('stock-sell error:', err.message); } });
 
         // --- Stock Game: Get Portfolio ---
@@ -468,7 +472,18 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             const quotes = _fetchTickerQuotes ? await _fetchTickerQuotes() : [];
             const snapshot = await getPortfolioSnapshot(player.name, quotes);
             socket.emit('stock-portfolio', snapshot);
+            const cash = await getBalance(player.name);
+            recordSnapshot(player.name, snapshot.totalValue, cash);
         } catch (err) { console.error('stock-get-portfolio error:', err.message); } });
+
+        // --- Stock Game: Get Portfolio History ---
+        socket.on('stock-get-portfolio-history', async () => { try {
+            if (!checkRateLimit(socket)) return;
+            if (!_stockGameEnabled) return;
+            const player = onlinePlayers.get(socket.id);
+            if (!player) return;
+            socket.emit('stock-portfolio-history', getHistory(player.name));
+        } catch (err) { console.error('stock-get-portfolio-history error:', err.message); } });
 
         // --- Stock Game: Get All Players' Portfolios (Leaderboard) ---
         socket.on('stock-get-leaderboard', async () => { try {
@@ -1593,6 +1608,96 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
 
             broadcastLobbies(io, 'strictbrain');
         } catch (err) { console.error('brain-versus-leave error:', err.message); } });
+
+        // ============== LOL BETTING ==============
+
+        // --- Place LoL Bet ---
+        socket.on('lol-place-bet', async (data) => { try {
+            if (!checkRateLimit(socket, 5)) return;
+            if (!data || typeof data !== 'object') return;
+
+            const player = onlinePlayers.get(socket.id);
+            if (!player) {
+                socket.emit('lol-bet-error', { message: 'Not logged in' });
+                return;
+            }
+            const playerName = player.name;
+
+            const { lolUsername, amount, betOnWin } = data;
+
+            // Validate inputs
+            if (typeof lolUsername !== 'string' || lolUsername.trim().length < 3 || lolUsername.trim().length > 16) {
+                socket.emit('lol-bet-error', { message: 'Invalid League username (3-16 characters)' });
+                return;
+            }
+
+            const betAmount = Number(amount);
+            if (!Number.isFinite(betAmount) || !Number.isInteger(betAmount) || betAmount <= 0 || betAmount > 1000) {
+                socket.emit('lol-bet-error', { message: 'Invalid bet amount (1-1000 coins)' });
+                return;
+            }
+
+            if (typeof betOnWin !== 'boolean') {
+                socket.emit('lol-bet-error', { message: 'Invalid bet type' });
+                return;
+            }
+
+            // Check balance
+            const balance = await getBalance(playerName);
+            if (balance < betAmount) {
+                socket.emit('lol-bet-error', { message: 'Insufficient balance' });
+                return;
+            }
+
+            // Deduct bet amount
+            const newBalance = await deductBalance(playerName, betAmount, 'lol_bet', {
+                lolUsername: lolUsername.trim(),
+                betOnWin
+            });
+
+            // Place bet
+            const bet = await placeBet(playerName, lolUsername.trim(), betAmount, betOnWin);
+
+            // Send confirmation to player
+            socket.emit('lol-bet-placed', {
+                bet,
+                newBalance
+            });
+
+            // Broadcast updated bets list to all clients
+            const allBets = await getActiveBets();
+            io.emit('lol-bets-update', { bets: allBets });
+
+            console.log(`[LoL Bet] ${playerName} bet ${betAmount} on ${lolUsername} to ${betOnWin ? 'WIN' : 'LOSE'}`);
+        } catch (err) {
+            console.error('lol-place-bet error:', err.message);
+            socket.emit('lol-bet-error', { message: 'Failed to place bet' });
+        } });
+
+        // --- Get Active LoL Bets ---
+        socket.on('lol-get-bets', async () => { try {
+            if (!checkRateLimit(socket)) return;
+
+            const bets = await getActiveBets();
+            socket.emit('lol-bets-update', { bets });
+        } catch (err) {
+            console.error('lol-get-bets error:', err.message);
+        } });
+
+        // --- Get Player LoL Bet History ---
+        socket.on('lol-get-history', async () => { try {
+            if (!checkRateLimit(socket)) return;
+
+            const player = onlinePlayers.get(socket.id);
+            if (!player) return;
+
+            const history = await getPlayerBets(player.name);
+            socket.emit('lol-history-update', { history });
+        } catch (err) {
+            console.error('lol-get-history error:', err.message);
+        } });
+
+        // ============== END LOL BETTING ==============
 
         // --- Leave Room ---
         socket.on('leave-room', async () => { try {

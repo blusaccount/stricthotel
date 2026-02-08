@@ -570,26 +570,33 @@
 
 ---
 
-# HANDOFF - Pictochat State Loss on Navigation / Reload
+# HANDOFF - Portfolio Performance Chart
 
 ## What Was Done
 
-### Bug Fix: Race condition in `picto-join` hydration
+### New Feature: Portfolio Performance Graph in Stock Game
 
-The `picto-join` handler had a race condition where clients could receive empty or incomplete pictochat state when connecting:
-
-1. The hydration promise set `pictoState.hydrationPromise = null` **inside itself**, so by the time the handler checked for it after the initial (empty) emit, it could already be null — skipping the second emit with the loaded data.
-2. The handler sent `picto-state` immediately (before hydration) and then conditionally sent it again after hydration. If the race was lost, clients only received the empty initial state.
-
-**Fix:** Moved the hydration await to **before** the emit, so state is always sent only once and only after hydration completes. Removed the self-nullification inside the promise; `hydrationPromise` is now cleared externally after the await.
+- Added a line chart showing the user's portfolio value, cash, and net worth over time.
+- Chart uses Chart.js (loaded via CDN, no build step) and matches the existing Nintendo DS pixel theme.
+- Portfolio snapshots are recorded in-memory on the server whenever portfolio data is fetched (on buy, sell, or periodic refresh).
+- New socket event `stock-get-portfolio-history` serves snapshot history to the client.
+- Chart shows three lines: Net Worth (solid), Portfolio Value (dashed), and Cash (dashed).
+- When fewer than 2 data points exist, a placeholder message is shown instead of the chart.
+- History resets on server restart (in-memory only, capped at 100 snapshots per player).
 
 ## Files Changed
 
-- `server/socket-handlers.js` — fixed `picto-join` handler hydration flow
-- `server/__tests__/pictochat-store.test.js` — added unit tests for pictochat store module
+- `server/portfolio-history.js` — new module for recording and retrieving portfolio snapshots
+- `server/socket-handlers.js` — import portfolio-history, record snapshots after buy/sell/get-portfolio, add `stock-get-portfolio-history` handler
+- `games/stocks/index.html` — Chart.js CDN, chart container HTML, chart CSS styles
+- `games/stocks/js/game.js` — chart rendering logic, socket handler for history data, periodic history fetch
+- `server/__tests__/portfolio-history.test.js` — unit tests for the portfolio-history module
 
 ## Verification
 
+- `node --check server/portfolio-history.js`
 - `node --check server/socket-handlers.js`
-- `npm test` (62 tests pass)
+- `npm test` (58 tests pass, including 4 new portfolio-history tests)
+- Manual: server starts, stocks page loads with chart section visible
+
 

@@ -129,6 +129,26 @@
         .summary-value.negative { color: var(--ds-text-dim); }
         .summary-value.negative::before { content: '▼ '; }
 
+        /* ===== Portfolio Chart ===== */
+        .chart-container {
+            background: var(--ds-surface);
+            border: 2px solid var(--ds-border);
+            padding: 10px;
+            margin-bottom: 16px;
+        }
+
+        .chart-container canvas {
+            width: 100% !important;
+            height: 200px !important;
+        }
+
+        .chart-empty {
+            color: var(--ds-text-dim);
+            font-size: 8px;
+            text-align: center;
+            padding: 20px;
+        }
+
         /* ===== Section Headers ===== */
         .section-title {
             font-size: 10px;
@@ -706,6 +726,13 @@
         </div>
     </div>
 
+    <!-- Portfolio Chart -->
+    <div class="section-title">PORTFOLIO PERFORMANCE</div>
+    <div class="chart-container" id="chart-container">
+        <div class="chart-empty" id="chart-empty">Trade stocks to see your portfolio graph.</div>
+        <canvas id="portfolio-chart" style="display:none;"></canvas>
+    </div>
+
     <!-- Holdings -->
     <div class="section-title">YOUR HOLDINGS</div>
     <div id="holdings-container">
@@ -775,6 +802,7 @@
 <div class="stock-toast" id="stock-toast"></div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="/games/stocks/js/game.js"></script>
 
 <!-- Background Music -->
