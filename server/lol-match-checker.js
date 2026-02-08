@@ -299,7 +299,18 @@ export function isCheckerRunning() {
 
 /**
  * Manually check the status of a specific bet
- * Returns a result object with status, message, and optional bet data
+ * 
+ * @param {number} betId - The ID of the bet to check
+ * @param {string} playerName - The name of the player requesting the check
+ * @returns {Promise<Object>} Result object with the following structure:
+ *   - success: {boolean} Whether the check completed without errors
+ *   - error: {string} Error code (e.g., 'RATE_LIMITED', 'API_NOT_CONFIGURED', 'BET_NOT_FOUND')
+ *   - message: {string} User-friendly message describing the result
+ *   - resolved: {boolean} Whether the bet was resolved (only present if success=true and bet was resolved)
+ *   - wonBet: {boolean} Whether the player won the bet (only present if resolved=true)
+ *   - payout: {number} The payout amount (only present if resolved=true)
+ *   - lolUsername: {string} The LoL username from the bet (only present if resolved=true)
+ *   - matchId: {string} The match ID that resolved the bet (only present if resolved=true)
  */
 export async function manualCheckBetStatus(betId, playerName) {
     // Rate limiting check

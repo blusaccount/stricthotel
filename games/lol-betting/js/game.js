@@ -301,6 +301,11 @@ function setupBetCheckListeners() {
     });
 }
 
+/**
+ * Handle manual bet status check request
+ * Sends a socket request to check if a bet should be resolved and manages button states
+ * @param {number} betId - The ID of the bet to check
+ */
 function handleCheckBetStatus(betId) {
     // Disable all check buttons temporarily
     const allCheckButtons = document.querySelectorAll('.check-bet-btn');
