@@ -1,3 +1,39 @@
+# HANDOFF - Strict Club: Fix audio visualizer and add visible queue
+
+## What Was Done
+
+### Fix: Audio visualizer now works with simulated mode
+
+The visualizer was broken because it attempted to use real Web Audio API frequency data from the YouTube iframe, which always fails due to CORS. The `analyser` object was always created (non-null) so the draw loop entered the "real audio" branch and rendered all-zero data (invisible bars). Added a `hasRealAudio` flag that is only set to `true` when `connectToPlayer()` succeeds, ensuring the simulated visualizer is used as the default.
+
+### Feature: Queue visible to everyone
+
+Previously, queuing a track immediately replaced whatever was playing. Now tracks are added to a FIFO queue (max 20 entries) that is broadcast to all listeners via a new `club-queue-update` socket event. A new Queue panel in the UI shows all pending tracks with position number, title, and who queued them. When a track ends or is skipped, the next track from the queue plays automatically.
+
+## Files Modified
+
+- `public/strict-club/visualizer.js` - Added `hasRealAudio` flag; draw loop uses simulated mode unless real audio connected
+- `public/strict-club/club.js` - Added queue UI update logic, `club-queue-update` handler, `updateQueue()` function; improved sync to clear UI when no track
+- `public/strict-club/index.html` - Added Queue panel between controls and listeners
+- `public/strict-club/club.css` - Added queue panel styles matching Frutiger Aero design
+- `server/socket-handlers.js` - Added `queue` array to `clubState`; `club-queue` adds to queue when track playing; `club-skip` plays next from queue; `club-sync` includes queue; new `club-queue-update` event
+- `HANDOFF.md` - This file
+
+## New Socket Events
+
+- `club-queue-update` (server -> client) - Broadcasts updated queue array to all listeners
+
+## Verification
+
+- `npm test` - all 128 tests pass
+- Navigate to Strict Club - Queue panel visible with "Queue is empty" state
+- Queue a track when nothing playing - plays immediately, queue stays empty
+- Queue additional tracks while one plays - they appear in the queue panel for all listeners
+- Skip track - next from queue starts playing automatically
+- New user joining sees current queue state
+
+---
+
 # HANDOFF - Fix lol-place-bet error: missing puuid column
 # HANDOFF - Add Strict Club (Multiplayer YouTube Audio Listening Room)
 
