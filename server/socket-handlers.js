@@ -124,12 +124,17 @@ const LOOP_ROOM = 'loop-machine-room';
 const EMPTY_GRID_ROW = [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0];
 const loopState = {
     grid: {
-        kick:   [...EMPTY_GRID_ROW],
-        snare:  [...EMPTY_GRID_ROW],
-        hihat:  [...EMPTY_GRID_ROW],
-        clap:   [...EMPTY_GRID_ROW],
-        bass:   [...EMPTY_GRID_ROW],
-        synth:  [...EMPTY_GRID_ROW],
+        kick:    [...EMPTY_GRID_ROW],
+        snare:   [...EMPTY_GRID_ROW],
+        hihat:   [...EMPTY_GRID_ROW],
+        clap:    [...EMPTY_GRID_ROW],
+        tom:     [...EMPTY_GRID_ROW],
+        ride:    [...EMPTY_GRID_ROW],
+        cowbell: [...EMPTY_GRID_ROW],
+        bass:    [...EMPTY_GRID_ROW],
+        synth:   [...EMPTY_GRID_ROW],
+        pluck:   [...EMPTY_GRID_ROW],
+        pad:     [...EMPTY_GRID_ROW],
     },
     bpm: 120,
     isPlaying: false,
@@ -2137,7 +2142,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             const { instrument, step } = data;
 
             // Validate instrument
-            const validInstruments = ['kick', 'snare', 'hihat', 'clap', 'bass', 'synth'];
+            const validInstruments = ['kick', 'snare', 'hihat', 'clap', 'tom', 'ride', 'cowbell', 'bass', 'synth', 'pluck', 'pad'];
             if (!validInstruments.includes(instrument)) return;
 
             // Validate step

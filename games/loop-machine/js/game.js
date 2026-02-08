@@ -10,8 +10,13 @@ const state = {
         snare: new Array(16).fill(0),
         hihat: new Array(16).fill(0),
         clap: new Array(16).fill(0),
+        tom: new Array(16).fill(0),
+        ride: new Array(16).fill(0),
+        cowbell: new Array(16).fill(0),
         bass: new Array(16).fill(0),
-        synth: new Array(16).fill(0)
+        synth: new Array(16).fill(0),
+        pluck: new Array(16).fill(0),
+        pad: new Array(16).fill(0)
     },
     bpm: 120,
     isPlaying: false,
@@ -198,6 +203,160 @@ function playBass() {
     osc.stop(now + 0.3);
 }
 
+function playTom() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Oscillator starting at ~120Hz with quick pitch envelope down to 50Hz
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+    
+    gain.gain.setValueAtTime(0.6, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    osc.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
+function playRide() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // High-frequency noise with band-pass filter
+    const bufferSize = audioContext.sampleRate * 0.3;
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+    
+    const noise = audioContext.createBufferSource();
+    noise.buffer = buffer;
+    
+    const filter = audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 10000;
+    filter.Q.value = 1;
+    
+    const gain = audioContext.createGain();
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
+    
+    noise.start(now);
+    noise.stop(now + 0.3);
+}
+
+function playCowbell() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Two square wave oscillators (800Hz + 540Hz)
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    
+    osc1.type = 'square';
+    osc1.frequency.setValueAtTime(800, now);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(540, now);
+    
+    filter.type = 'bandpass';
+    filter.frequency.value = 1000;
+    filter.Q.value = 1;
+    
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    
+    osc1.connect(filter);
+    osc2.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc1.stop(now + 0.1);
+    osc2.stop(now + 0.1);
+}
+
+function playPluck() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Triangle wave with fast attack and medium decay
+    const osc = audioContext.createOscillator();
+    const filter = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now); // A3
+    
+    // Filter sweep for pluck character
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(3000, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 0.3);
+    filter.Q.value = 2;
+    
+    // Fast attack, medium decay
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc.start(now);
+    osc.stop(now + 0.3);
+}
+
+function playPad() {
+    if (!audioContext || !masterGainNode) return;
+    const now = audioContext.currentTime;
+    
+    // Multiple detuned oscillators for rich pad sound
+    const osc1 = audioContext.createOscillator();
+    const osc2 = audioContext.createOscillator();
+    const osc3 = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    
+    const baseFreq = 130.81; // C3
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(baseFreq, now);
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(baseFreq * 1.01, now); // Slightly detuned
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(baseFreq * 0.99, now); // Slightly detuned down
+    
+    // Slow attack and long release
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.2);
+    gain.gain.linearRampToValueAtTime(0.05, now + 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    osc3.connect(gain);
+    gain.connect(masterGainNode);
+    
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+    osc1.stop(now + 1.0);
+    osc2.stop(now + 1.0);
+    osc3.stop(now + 1.0);
+}
+
 function playSynth() {
     if (!audioContext || !masterGainNode) return;
     const now = audioContext.currentTime;
@@ -237,8 +396,13 @@ const instrumentPlayers = {
     snare: playSnare,
     hihat: playHihat,
     clap: playClap,
+    tom: playTom,
+    ride: playRide,
+    cowbell: playCowbell,
     bass: playBass,
-    synth: playSynth
+    synth: playSynth,
+    pluck: playPluck,
+    pad: playPad
 };
 
 // ===== Sequencer Loop =====
@@ -290,7 +454,7 @@ function updateStepHighlight(currentStep) {
 
 // ===== UI =====
 function renderGrid() {
-    const instruments = ['kick', 'snare', 'hihat', 'clap', 'bass', 'synth'];
+    const instruments = ['kick', 'snare', 'hihat', 'clap', 'tom', 'ride', 'cowbell', 'bass', 'synth', 'pluck', 'pad'];
     
     instruments.forEach(instrument => {
         const container = document.querySelector(`.grid-cells[data-instrument="${instrument}"]`);
