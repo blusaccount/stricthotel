@@ -591,7 +591,7 @@ socket.on('connect', () => {
     if (name) {
         const Creator = window.MaexchenCreator || window.StrictHotelCreator;
         const character = (Creator && Creator.hasCharacter()) ? Creator.getCharacter() : null;
-        socket.emit('register-player', { name: name, character: character, game: 'loop-machine' });
+        socket.emit('register-player', { name, character, game: 'loop-machine' });
     }
     
     socket.emit('loop-join');
