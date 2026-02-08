@@ -197,7 +197,7 @@ function showSuccessMessage() {
         color: white;
         padding: 20px 40px;
         border: 2px solid white;
-        font-size: 12px;
+        font-size: 1.2em;
         z-index: 1000;
         animation: fadeInOut 2s ease-in-out;
     `;

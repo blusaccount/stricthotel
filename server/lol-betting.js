@@ -119,6 +119,7 @@ export async function getPlayerBets(playerName, limit = 20) {
 /**
  * Mock function to simulate resolving a bet
  * In production, this would integrate with Riot Games API
+ * Note: This function is not exposed via socket handlers - it's for future admin/API use
  */
 export async function resolveBet(betId, didPlayerWin) {
     if (!isDatabaseEnabled()) {
@@ -131,7 +132,7 @@ export async function resolveBet(betId, didPlayerWin) {
         bet.result = didPlayerWin;
         bet.resolvedAt = new Date().toISOString();
         
-        // Calculate payout (2x if won)
+        // Calculate total payout (2x total return if won, which includes original bet)
         const wonBet = bet.betOnWin === didPlayerWin;
         return {
             bet,
@@ -159,6 +160,6 @@ export async function resolveBet(betId, didPlayerWin) {
         playerId: bet.player_id,
         playerName: bet.player_name,
         wonBet,
-        payout: wonBet ? Number(bet.bet_amount) * 2 : 0
+        payout: wonBet ? Number(bet.bet_amount) * 2 : 0  // 2x total return (includes original bet)
     };
 }
