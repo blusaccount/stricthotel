@@ -51,7 +51,7 @@
             // Get diamond count for this player
             var diamonds = playerDiamonds.get(p.name) || 0;
             var diamondHtml = diamonds > 0 
-                ? '<span class="contact-diamonds">💎×' + diamonds + '</span>' 
+                ? '<span class="contact-diamonds"><img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + diamonds + '</span>' 
                 : '';
             
             return '<div class="contact-card" data-name="' + escapeAttr(p.name) + '">' +
@@ -102,7 +102,7 @@
                     if (data.diamonds > 0) {
                         var diamondSpan = document.createElement('span');
                         diamondSpan.className = 'contact-diamonds';
-                        diamondSpan.textContent = '💎×' + data.diamonds;
+                        diamondSpan.innerHTML = '<img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + data.diamonds;
                         nameEl.appendChild(diamondSpan);
                     }
                 }
@@ -130,7 +130,7 @@
                     if (data.diamonds > 0) {
                         var diamondSpan = document.createElement('span');
                         diamondSpan.className = 'contact-diamonds';
-                        diamondSpan.textContent = '💎×' + data.diamonds;
+                        diamondSpan.innerHTML = '<img src="/assets/diamond.png" class="diamond-icon" alt="💎">×' + data.diamonds;
                         nameEl.appendChild(diamondSpan);
                     }
                 }
