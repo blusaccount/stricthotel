@@ -15,6 +15,36 @@ function round2(n) {
     return Math.round(n * 100) / 100;
 }
 
+function compareByPortfolioValueDesc(a, b) {
+    if (b.portfolioValue !== a.portfolioValue) return b.portfolioValue - a.portfolioValue;
+    return a.name.localeCompare(b.name);
+}
+
+function compareByPerformanceDesc(a, b) {
+    if (b.performancePct !== a.performancePct) return b.performancePct - a.performancePct;
+    return a.name.localeCompare(b.name);
+}
+
+function toPerformanceEntry(player) {
+    let investedCapital = 0;
+    for (const holding of player.holdings || []) {
+        investedCapital += Number(holding.shares) * Number(holding.avgCost);
+    }
+    investedCapital = round2(investedCapital);
+    if (investedCapital <= 0) return null;
+
+    const openPnl = round2(player.portfolioValue - investedCapital);
+    const performancePct = round2((openPnl / investedCapital) * 100);
+
+    return {
+        name: player.name,
+        investedCapital,
+        portfolioValue: player.portfolioValue,
+        openPnl,
+        performancePct
+    };
+}
+
 function getPortfolioMemory(playerName) {
     if (!portfolios.has(playerName)) {
         portfolios.set(playerName, new Map());
@@ -81,7 +111,7 @@ export async function buyStock(playerName, symbol, price, amount) {
         const txResult = await withTransaction(async (client) => {
             const newBalance = await deductBalance(playerName, amount, 'stock_buy', { symbol, price, amount }, client);
             if (newBalance === null) {
-                return { ok: false, error: 'Insufficient funds' };
+                return { ok: false, code: 'INSUFFICIENT_FUNDS', error: 'Insufficient funds' };
             }
 
             const playerId = await getOrCreatePlayerId(playerName, client);
@@ -269,7 +299,7 @@ export async function getLeaderboardSnapshot(currentPrices) {
                 holdings,
             });
         }
-        leaderboard.sort((a, b) => b.portfolioValue - a.portfolioValue);
+        leaderboard.sort(compareByPortfolioValueDesc);
         return leaderboard;
     }
 
@@ -332,8 +362,26 @@ export async function getLeaderboardSnapshot(currentPrices) {
         });
     }
 
-    leaderboard.sort((a, b) => b.portfolioValue - a.portfolioValue);
+    leaderboard.sort(compareByPortfolioValueDesc);
     return leaderboard;
+}
+
+/**
+ * Rank players by open trade performance (unrealized PnL %) for currently held positions.
+ * Keeps the main leaderboard independent (portfolio value still primary there).
+ * @returns {Promise<Array<{ name:string, investedCapital:number, portfolioValue:number, openPnl:number, performancePct:number }>>}
+ */
+export async function getTradePerformanceLeaderboard(currentPrices) {
+    const portfolioLeaderboard = await getLeaderboardSnapshot(currentPrices);
+    const performance = [];
+
+    for (const player of portfolioLeaderboard) {
+        const entry = toPerformanceEntry(player);
+        if (entry) performance.push(entry);
+    }
+
+    performance.sort(compareByPerformanceDesc);
+    return performance;
 }
 
 /**

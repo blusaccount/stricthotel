@@ -12,7 +12,14 @@ import {
 } from './room-manager.js';
 
 import { getBalance, addBalance, deductBalance } from './currency.js';
-import { buyStock, sellStock, getPortfolioSnapshot, getAllPortfolioPlayerNames, getLeaderboardSnapshot } from './stock-game.js';
+import {
+    buyStock,
+    sellStock,
+    getPortfolioSnapshot,
+    getAllPortfolioPlayerNames,
+    getLeaderboardSnapshot,
+    getTradePerformanceLeaderboard
+} from './stock-game.js';
 import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
 
 // ============== INPUT VALIDATION ==============
@@ -489,6 +496,9 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance 
             const quotes = _fetchTickerQuotes ? await _fetchTickerQuotes() : [];
             const leaderboard = await getLeaderboardSnapshot(quotes);
             socket.emit('stock-leaderboard', leaderboard);
+
+            const performanceLeaderboard = await getTradePerformanceLeaderboard(quotes);
+            socket.emit('stock-performance-leaderboard', performanceLeaderboard);
         } catch (err) { console.error('stock-get-leaderboard error:', err.message); } });
 
         // --- Pictochat Join ---
