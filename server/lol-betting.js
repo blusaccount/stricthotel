@@ -139,6 +139,9 @@ export async function getPlayerBets(playerName, limit = 20) {
 
 /**
  * Get pending bets that have PUUID and last match ID for checking
+ * Note: Limited to 500 bets to prevent excessive memory usage.
+ * In production with high volume, consider implementing batch processing
+ * or increasing this limit based on available resources.
  */
 export async function getPendingBetsForChecking() {
     if (!isDatabaseEnabled()) {

@@ -259,11 +259,12 @@ socket.on('lol-bet-resolved', (data) => {
         return; // Not our bet, ignore
     }
     
-    if (wonBet) {
-        showBetResolutionNotification(`🎉 You won ${payout.toFixed(0)} SC! ${lolUsername} won their game!`, true);
-    } else {
-        showBetResolutionNotification(`💀 You lost your bet. ${lolUsername} lost their game.`, false);
-    }
+    // Pass structured data to notification function
+    showBetResolutionNotification({
+        wonBet,
+        payout,
+        lolUsername
+    });
     
     // Refresh balance if provided
     if (data.newBalance !== undefined) {
@@ -323,14 +324,16 @@ function showSuccessMessage() {
     }, 2000);
 }
 
-function showBetResolutionNotification(message, isWin) {
+function showBetResolutionNotification(data) {
+    const { wonBet, payout, lolUsername } = data;
+    
     const notificationDiv = document.createElement('div');
     notificationDiv.style.cssText = `
         position: fixed;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        background: ${isWin ? '#4caf50' : '#f44336'};
+        background: ${wonBet ? '#4caf50' : '#f44336'};
         color: white;
         padding: 30px 50px;
         border: 3px solid white;
@@ -340,7 +343,16 @@ function showBetResolutionNotification(message, isWin) {
         max-width: 80%;
         box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     `;
-    notificationDiv.textContent = message;
+    
+    // Build message safely using textContent
+    const messageDiv = document.createElement('div');
+    if (wonBet) {
+        messageDiv.textContent = `🎉 You won ${payout.toFixed(0)} SC! ${lolUsername} won their game!`;
+    } else {
+        messageDiv.textContent = `💀 You lost your bet. ${lolUsername} lost their game.`;
+    }
+    
+    notificationDiv.appendChild(messageDiv);
     document.body.appendChild(notificationDiv);
     
     setTimeout(() => {

@@ -1,8 +1,9 @@
 // ============== LOL MATCH CHECKER ==============
 
-import { getPendingBetsForChecking, resolveBet } from './lol-betting.js';
+import { getPendingBetsForChecking, resolveBet, getActiveBets } from './lol-betting.js';
 import { addBalance } from './currency.js';
 import { getMatchHistory, getMatchDetails, isRiotApiEnabled } from './riot-api.js';
+import { withTransaction } from './db.js';
 
 let checkerInterval = null;
 let io = null;
@@ -110,18 +111,29 @@ async function checkPlayerMatches(puuid, bets) {
         return; // No matches found
     }
 
-    // Find the most recent match among all bets for this player
-    const oldestLastMatchId = bets[0].lastMatchId;
-    const oldestLastMatchIndex = matchIds.indexOf(oldestLastMatchId);
+    // Find the most recent lastMatchId among all bets for this player
+    // (bets are ordered oldest first, so later bets have more recent lastMatchIds)
+    let mostRecentLastMatchId = null;
+    for (const bet of bets) {
+        if (bet.lastMatchId) {
+            mostRecentLastMatchId = bet.lastMatchId;
+        }
+    }
+
+    if (!mostRecentLastMatchId) {
+        return; // No baseline match to compare against
+    }
+
+    const baselineMatchIndex = matchIds.indexOf(mostRecentLastMatchId);
     
     // If lastMatchId not found in recent matches, check the most recent match
     let newMatches = [];
-    if (oldestLastMatchIndex === -1) {
+    if (baselineMatchIndex === -1) {
         // lastMatchId not in recent 5 - check most recent match only
         newMatches = [matchIds[0]];
-    } else if (oldestLastMatchIndex > 0) {
+    } else if (baselineMatchIndex > 0) {
         // Found lastMatchId, get all matches before it
-        newMatches = matchIds.slice(0, oldestLastMatchIndex);
+        newMatches = matchIds.slice(0, baselineMatchIndex);
     }
 
     if (newMatches.length === 0) {
@@ -166,7 +178,7 @@ async function resolveBetAndNotify(bet, didPlayerWin, matchId) {
 
         const { wonBet, payout } = result;
 
-        // Credit winner's balance
+        // Credit winner's balance (addBalance already handles transactions internally)
         let newBalance = null;
         if (wonBet && payout > 0) {
             newBalance = await addBalance(bet.playerName, payout, 'lol_bet_win', {
@@ -193,7 +205,6 @@ async function resolveBetAndNotify(bet, didPlayerWin, matchId) {
             });
 
             // Broadcast updated bets list (resolved bets won't appear)
-            const { getActiveBets } = await import('./lol-betting.js');
             const allBets = await getActiveBets();
             io.emit('lol-bets-update', { bets: allBets });
         }

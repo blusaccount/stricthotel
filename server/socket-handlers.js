@@ -1651,9 +1651,9 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             }
             const playerName = player.name;
 
-            const { lolUsername, amount, betOnWin, puuid } = data;
+            const { lolUsername, amount, betOnWin } = data;
 
-            // Validate Riot ID format (API lookup already happened in lol-validate-username)
+            // Validate Riot ID format
             const parsed = parseRiotId(lolUsername);
             if (!parsed) {
                 socket.emit('lol-bet-error', { message: 'Invalid Riot ID format. Use Name#Tag' });
@@ -1679,17 +1679,23 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 return;
             }
 
-            // Fetch last match ID if API is enabled and puuid is provided
+            // Server-side validation: look up PUUID to prevent client tampering
+            let puuid = null;
             let lastMatchId = null;
-            if (isRiotApiEnabled() && puuid && typeof puuid === 'string') {
+            if (isRiotApiEnabled()) {
                 try {
-                    const matchHistory = await getMatchHistory(puuid, 1);
-                    if (matchHistory.length > 0) {
-                        lastMatchId = matchHistory[0];
+                    const validation = await validateRiotId(resolvedName);
+                    if (validation.valid && validation.puuid) {
+                        puuid = validation.puuid;
+                        // Fetch last match ID
+                        const matchHistory = await getMatchHistory(puuid, 1);
+                        if (matchHistory.length > 0) {
+                            lastMatchId = matchHistory[0];
+                        }
                     }
-                } catch (matchErr) {
-                    console.warn(`[LoL Bet] Could not fetch match history for ${resolvedName}:`, matchErr.message);
-                    // Continue without lastMatchId - bet can still be placed
+                } catch (apiErr) {
+                    console.warn(`[LoL Bet] Could not fetch PUUID/match history for ${resolvedName}:`, apiErr.message);
+                    // Continue without puuid/lastMatchId - bet can still be placed
                 }
             }
 
