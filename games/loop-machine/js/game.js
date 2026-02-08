@@ -585,6 +585,15 @@ function setStatus(message, type = '') {
 socket.on('connect', () => {
     console.log('[LoopMachine] Connected');
     setStatus('Connected', 'success');
+    
+    // Register player for global online status
+    const name = localStorage.getItem('stricthotel-name') || '';
+    if (name) {
+        const Creator = window.MaexchenCreator || window.StrictHotelCreator;
+        const character = (Creator && Creator.hasCharacter()) ? Creator.getCharacter() : null;
+        socket.emit('register-player', { name, character, game: 'loop-machine' });
+    }
+    
     socket.emit('loop-join');
 });
 

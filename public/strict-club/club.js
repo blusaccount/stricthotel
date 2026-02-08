@@ -145,6 +145,15 @@
 
     socket.on('connect', function () {
         console.log('[StrictClub] Connected to server');
+        
+        // Register player for global online status
+        var name = localStorage.getItem('stricthotel-name') || '';
+        if (name) {
+            var Creator = window.MaexchenCreator || window.StrictHotelCreator;
+            var character = (Creator && Creator.hasCharacter()) ? Creator.getCharacter() : null;
+            socket.emit('register-player', { name: name, character: character, game: 'strict-club' });
+        }
+        
         socket.emit('club-join');
     });
 
