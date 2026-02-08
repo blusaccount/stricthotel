@@ -358,3 +358,59 @@
 
 - Attempted: `docker compose config` (environment limitation: docker not installed in this runtime)
 - Attempted: `npm test` (environment limitation: `vitest` binary missing because dependencies are not installed in this runtime)
+
+---
+
+# HANDOFF - PR #2 Stock Command Hardening
+
+## What Was Done
+
+- Hardened stock trade input validation to accept only positive integer trade amounts for `stock-buy` and `stock-sell`.
+- Added a lightweight per-socket stock trade cooldown (400ms) to reduce trade-spam bursts.
+- Standardized stock error payloads via `{ code, message, error }` so clients can use structured codes while keeping backward compatibility with existing `error` handling.
+- Extended stock engine error returns in `server/stock-game.js` with stable error `code` values (e.g. `INVALID_AMOUNT`, `INSUFFICIENT_FUNDS`, `NOT_ENOUGH_SHARES`, `TRANSACTION_FAILED`).
+- Cleans up trade cooldown state on socket disconnect.
+
+## Files Changed
+
+- `server/socket-handlers.js`
+- `server/stock-game.js`
+- `HANDOFF.md`
+
+## Verification
+
+- `node --check server/socket-handlers.js`
+- `node --check server/stock-game.js`
+- `npm test`
+
+
+---
+
+# HANDOFF - Stock Rankings: Portfolio Worth + Trade Performance
+
+## What Was Done
+
+- Kept stock leaderboard ranking by **portfolio worth** (`portfolioValue`) as requested.
+- Added deterministic tie-break behavior (name ascending) for portfolio ranking to keep ordering stable.
+- Added a second server-side ranking: **trade performance leaderboard** based on open-position performance:
+  - `investedCapital = sum(shares * avgCost)`
+  - `openPnl = portfolioValue - investedCapital`
+  - `performancePct = openPnl / investedCapital * 100`
+- Exposed the new ranking via socket event `stock-performance-leaderboard` alongside existing `stock-leaderboard`.
+- Extended stock page UI with a new **TRADE PERFORMANCE** section that displays ranked users by `performancePct` while preserving the existing portfolio leaderboard.
+
+## Files Changed
+
+- `server/stock-game.js`
+- `server/socket-handlers.js`
+- `games/stocks/index.html`
+- `games/stocks/js/game.js`
+- `HANDOFF.md`
+
+## Verification
+
+- `node --check server/stock-game.js`
+- `node --check server/socket-handlers.js`
+- `node --check games/stocks/js/game.js`
+- `npm test`
+
