@@ -1605,11 +1605,12 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             if (!checkRateLimit(socket, 5)) return;
             if (!data || typeof data !== 'object') return;
 
-            const playerName = onlinePlayers.get(socket.id);
-            if (!playerName) {
+            const player = onlinePlayers.get(socket.id);
+            if (!player) {
                 socket.emit('lol-bet-error', { message: 'Not logged in' });
                 return;
             }
+            const playerName = player.name;
 
             const { lolUsername, amount, betOnWin } = data;
 
@@ -1676,10 +1677,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
         socket.on('lol-get-history', async () => { try {
             if (!checkRateLimit(socket)) return;
 
-            const playerName = onlinePlayers.get(socket.id);
-            if (!playerName) return;
+            const player = onlinePlayers.get(socket.id);
+            if (!player) return;
 
-            const history = await getPlayerBets(playerName);
+            const history = await getPlayerBets(player.name);
             socket.emit('lol-history-update', { history });
         } catch (err) {
             console.error('lol-get-history error:', err.message);

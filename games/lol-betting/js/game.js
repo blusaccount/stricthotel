@@ -5,6 +5,10 @@ const socket = io();
 let playerBalance = 0;
 let selectedBetType = null;
 
+// Constants
+const NAME_KEY = 'stricthotel-name';
+const CHAR_KEY = 'stricthotel-character';
+
 // DOM Elements
 const balanceDisplay = document.getElementById('balance-display');
 const betForm = document.getElementById('bet-form');
@@ -18,15 +22,36 @@ const betsList = document.getElementById('bets-list');
 // ============== INITIALIZATION ==============
 
 function init() {
-    // Request balance
-    socket.emit('get-balance');
-    
-    // Request active bets
-    socket.emit('lol-get-bets');
-    
     // Setup event listeners
     setupEventListeners();
 }
+
+// Register player and request data on socket connection
+function register() {
+    const name = localStorage.getItem(NAME_KEY) || '';
+    if (!name) {
+        balanceDisplay.textContent = '💰 Not logged in';
+        return;
+    }
+    
+    const charJSON = localStorage.getItem(CHAR_KEY);
+    let character = null;
+    try { 
+        character = charJSON ? JSON.parse(charJSON) : null; 
+    } catch (e) { 
+        /* ignore */ 
+    }
+    
+    socket.emit('register-player', { name: name, character: character, game: 'lol-betting' });
+}
+
+// Wait for socket connection before registering
+socket.on('connect', () => {
+    register();
+    
+    // Request active bets
+    socket.emit('lol-get-bets');
+});
 
 function setupEventListeners() {
     // Bet type buttons
