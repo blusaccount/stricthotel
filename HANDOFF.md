@@ -1,3 +1,74 @@
+# HANDOFF - Implement LoL Bet Resolution with Riot Match v5 API
+
+## What Was Done
+
+### Feature: Automatic bet resolution when LoL games complete
+
+Previously, bets on League of Legends players would stay in "pending" status forever because the system never checked if the player actually finished a game. The `resolveBet()` function existed but was never called.
+
+This PR implements full automatic bet resolution by:
+
+1. **Storing match context when bets are placed**
+   - Added `puuid` and `last_match_id` columns to `lol_bets` table
+   - Server validates Riot ID and fetches PUUID (preventing client tampering)
+   - Retrieves most recent match ID as baseline for detecting new games
+
+2. **Background match checker (`server/lol-match-checker.js`)**
+   - Polls every 60 seconds (configurable via `LOL_CHECK_INTERVAL_MS`)
+   - Queries pending bets with puuid/last_match_id
+   - Groups by PUUID to minimize API calls
+   - Rate-limited: 30s minimum between checks per player
+   - Fetches match history and details via Riot Match v5 API
+   - Determines win/loss by checking participant data
+   - Resolves all bets on that player's outcome
+   - Credits winners via `addBalance()`
+   - Only starts when `RIOT_API_KEY` is configured
+
+3. **Client notifications**
+   - Real-time notification when bet resolves (win or loss)
+   - Updates balance display
+   - Refreshes active bets list
+
+## Files Changed
+
+- `server/sql/persistence.sql` — Added `puuid` and `last_match_id` columns to `lol_bets`
+- `server/riot-api.js` — Added `getMatchHistory()` and `getMatchDetails()` for Match v5 API
+- `server/lol-betting.js` — Updated `placeBet()` to accept/store puuid and lastMatchId; added `getPendingBetsForChecking()`
+- `server/socket-handlers.js` — Server-side PUUID validation in `lol-place-bet` handler
+- `server/lol-match-checker.js` — New background polling module
+- `server/index.js` — Start/stop match checker on server startup/shutdown
+- `games/lol-betting/js/game.js` — Client-side notification handling
+- Tests: Added coverage for new functions
+
+## Verification
+
+- `npm test` — all 128 tests pass (added 6 new tests)
+- CodeQL security scan — 0 vulnerabilities
+- Server starts correctly with and without `RIOT_API_KEY`
+- Graceful shutdown tested (SIGTERM/SIGINT)
+
+## Security Notes
+
+- PUUID now validated server-side (client cannot spoof)
+- Rate limiting per PUUID prevents API abuse
+- Balance updates use existing transaction safety from `addBalance()`
+- Client notifications filter by playerName
+- XSS protection via structured data and `textContent`
+
+## Known Limitations
+
+- 500 bet limit per check cycle (documented in code)
+- Riot API rate limits apply (default dev key: ~20 requests/sec, ~100 requests/2min)
+- Match history only checks last 5 games (API limitation)
+
+## Follow-up Considerations
+
+- If production volume exceeds 500 pending bets, increase limit or implement batch processing
+- Consider adding admin UI to manually resolve stuck bets
+- Monitor Riot API rate limit errors in logs
+
+---
+
 # HANDOFF - Fix Pictochat Continuous Drawing Not Visible to Others
 
 ## What Was Done

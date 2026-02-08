@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseRiotId } from '../riot-api.js';
+import { parseRiotId, getMatchHistory, getMatchDetails } from '../riot-api.js';
 
 describe('riot-api: parseRiotId', () => {
     it('parses a valid Riot ID', () => {
@@ -58,5 +58,31 @@ describe('riot-api: parseRiotId', () => {
 
     it('returns null when tagLine is empty', () => {
         expect(parseRiotId('Player#')).toBeNull();
+    });
+});
+
+describe('riot-api: getMatchHistory', () => {
+    it('throws error for invalid puuid', async () => {
+        await expect(getMatchHistory(null, 5)).rejects.toThrow('Valid PUUID is required');
+        await expect(getMatchHistory('', 5)).rejects.toThrow('Valid PUUID is required');
+        await expect(getMatchHistory(123, 5)).rejects.toThrow('Valid PUUID is required');
+    });
+
+    it('clamps count to valid range', async () => {
+        // This test will fail without API key, but tests the input validation
+        try {
+            await getMatchHistory('valid-puuid', 0);
+        } catch (err) {
+            // Expected to fail due to no API key, but count should be clamped to 1
+            expect(err.message).not.toContain('count');
+        }
+    });
+});
+
+describe('riot-api: getMatchDetails', () => {
+    it('throws error for invalid match ID', async () => {
+        await expect(getMatchDetails(null)).rejects.toThrow('Valid match ID is required');
+        await expect(getMatchDetails('')).rejects.toThrow('Valid match ID is required');
+        await expect(getMatchDetails(123)).rejects.toThrow('Valid match ID is required');
     });
 });

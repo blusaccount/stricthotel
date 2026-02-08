@@ -81,3 +81,56 @@ export async function validateRiotId(riotId) {
         throw err;
     }
 }
+
+/**
+ * Get recent match IDs for a player by their PUUID.
+ * Returns an array of match ID strings (e.g., ["EUW1_123456789", ...]).
+ * Returns empty array if player not found or no matches.
+ * Throws on network/server errors.
+ */
+export async function getMatchHistory(puuid, count = 5) {
+    if (!puuid || typeof puuid !== 'string') {
+        throw new Error('Valid PUUID is required');
+    }
+    
+    const safeCount = Math.max(1, Math.min(100, Math.floor(count)));
+    const region = VALID_REGIONS.includes(RIOT_REGION) ? RIOT_REGION : 'europe';
+    const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/by-puuid/${encodeURIComponent(puuid)}/ids?count=${safeCount}`;
+
+    const res = await fetch(url, {
+        headers: { 'X-Riot-Token': RIOT_API_KEY }
+    });
+
+    if (res.status === 404) return [];
+    if (res.status === 429) throw new Error('Riot API rate limit exceeded, try again later');
+    if (!res.ok) throw new Error(`Riot API error (${res.status})`);
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Get match details by match ID.
+ * Returns match info including participants with win/loss data.
+ * Returns null if match not found.
+ * Throws on network/server errors.
+ */
+export async function getMatchDetails(matchId) {
+    if (!matchId || typeof matchId !== 'string') {
+        throw new Error('Valid match ID is required');
+    }
+
+    const region = VALID_REGIONS.includes(RIOT_REGION) ? RIOT_REGION : 'europe';
+    const url = `https://${region}.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(matchId)}`;
+
+    const res = await fetch(url, {
+        headers: { 'X-Riot-Token': RIOT_API_KEY }
+    });
+
+    if (res.status === 404) return null;
+    if (res.status === 429) throw new Error('Riot API rate limit exceeded, try again later');
+    if (!res.ok) throw new Error(`Riot API error (${res.status})`);
+
+    const data = await res.json();
+    return data;
+}

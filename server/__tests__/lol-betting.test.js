@@ -6,7 +6,7 @@ vi.mock('../db.js', () => ({
     query: vi.fn()
 }));
 
-const { placeBet, getActiveBets, getPlayerBets, resolveBet } = await import('../lol-betting.js');
+const { placeBet, getActiveBets, getPlayerBets, resolveBet, getPendingBetsForChecking } = await import('../lol-betting.js');
 
 describe('lol-betting (in-memory mode)', () => {
     describe('placeBet', () => {
@@ -71,6 +71,38 @@ describe('lol-betting (in-memory mode)', () => {
         it('returns empty array for unknown player', async () => {
             const bets = await getPlayerBets('unknown_player_xyz');
             expect(bets).toEqual([]);
+        });
+    });
+
+    describe('placeBet with puuid and lastMatchId', () => {
+        it('stores puuid and lastMatchId when provided', async () => {
+            const bet = await placeBet('frank', 'TestPlayer#NA1', 200, true, 'test-puuid-123', 'NA1_4567890');
+            expect(bet.puuid).toBe('test-puuid-123');
+            expect(bet.lastMatchId).toBe('NA1_4567890');
+            expect(bet.status).toBe('pending');
+        });
+
+        it('accepts null puuid and lastMatchId', async () => {
+            const bet = await placeBet('george', 'AnotherPlayer#EUW', 150, false, null, null);
+            expect(bet.puuid).toBeNull();
+            expect(bet.lastMatchId).toBeNull();
+        });
+    });
+
+    describe('getPendingBetsForChecking', () => {
+        it('returns only pending bets with puuid and lastMatchId', async () => {
+            // Create bets with and without puuid/lastMatchId
+            await placeBet('harry', 'WithData#NA1', 100, true, 'puuid-1', 'match-1');
+            await placeBet('ian', 'NoData#NA1', 100, true, null, null);
+            await placeBet('jane', 'OnlyPuuid#NA1', 100, false, 'puuid-2', null);
+            
+            const pending = await getPendingBetsForChecking();
+            
+            // Should only return bets with both puuid AND lastMatchId
+            const withData = pending.filter(b => b.playerName === 'harry');
+            expect(withData.length).toBe(1);
+            expect(withData[0].puuid).toBe('puuid-1');
+            expect(withData[0].lastMatchId).toBe('match-1');
         });
     });
 });
