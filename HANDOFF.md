@@ -1756,3 +1756,44 @@ Added configurable bar length for Loop Machine so users can set pattern size fro
 - `server/lol-match-checker.js`
 - `server/__tests__/lol-match-checker.test.js`
 - `PLANS.md`
+
+# HANDOFF - Socket Handler Modularization (Part 2)
+
+## What Was Done
+- Created 5 new domain-specific handler modules in `server/handlers/`:
+  1. **currency.js** - Player registration and currency handlers (register-player, get-player-diamonds, get-player-character, get-balance, buy-diamonds, lobby-make-it-rain)
+  2. **stocks.js** - Stock trading game handlers (stock-buy, stock-sell, stock-get-portfolio, stock-get-portfolio-history, stock-get-leaderboard)
+     - Includes parseTradeAmount and getQuoteForSymbol helpers with stockQuoteCache
+     - Exports cleanupStockQuoteCache() for cache management
+  3. **pictochat.js** - Pictochat drawing and messaging handlers (all picto-* events)
+     - Includes pictoState and helpers (sanitizePoints, getPictoName, getRedoStack, trimStrokes, cleanupPictoForSocket)
+     - Exports cleanupPictochatOnDisconnect() for cleanup
+  4. **strict-club.js** - YouTube watch party handlers (all club-* events)
+     - Includes clubState for video queue and listeners
+     - Exports cleanupClubOnDisconnect() for listener cleanup
+  5. **loop-machine.js** - Collaborative beat sequencer handlers (all loop-* events)
+     - Includes loopState and helpers (createEmptyLoopRow, constants)
+     - Exports cleanupLoopOnDisconnect() for listener cleanup
+
+- Each module exports a `registerXHandlers(socket, io, deps)` function
+- Maintains exact same try-catch patterns and error handling as original
+- All validation, rate limiting, and business logic preserved exactly
+
+## How to Verify
+1. Syntax check: `node --check server/handlers/currency.js server/handlers/stocks.js server/handlers/pictochat.js server/handlers/strict-club.js server/handlers/loop-machine.js`
+2. Tests pass: `npm test` (3 pre-existing failures unrelated to this change)
+3. Next step: Wire these modules into socket-handlers.js and remove duplicated code
+
+## Files Created
+- `server/handlers/currency.js`
+- `server/handlers/stocks.js`
+- `server/handlers/pictochat.js`
+- `server/handlers/strict-club.js`
+- `server/handlers/loop-machine.js`
+
+## Next Steps
+- Import and call the new register functions in socket-handlers.js
+- Call cleanup functions (cleanupPictochatOnDisconnect, cleanupClubOnDisconnect, cleanupLoopOnDisconnect) in disconnect handler
+- Remove extracted code from socket-handlers.js (lines 441-554, 615-767, 770-1003, 2191-2332, 2338-2630)
+- Remove state objects and helper functions that were moved to modules
+- Update cleanupRateLimiters() to call cleanupStockQuoteCache()
