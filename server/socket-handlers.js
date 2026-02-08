@@ -391,6 +391,17 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             console.log(`Registered: ${name} for ${game}`);
         } catch (err) { console.error('register-player error:', err.message); } });
 
+        // --- Get Player Diamonds (for contacts list) ---
+        socket.on('get-player-diamonds', async (data) => { try {
+            if (!checkRateLimit(socket)) return;
+            if (!data || typeof data !== 'object') return;
+            const name = sanitizeName(data.name);
+            if (!name) return;
+
+            const diamonds = await getDiamonds(name);
+            socket.emit('player-diamonds', { name, diamonds });
+        } catch (err) { console.error('get-player-diamonds error:', err.message); } });
+
         // --- Get Player Character (for contacts app) ---
         socket.on('get-player-character', async (data) => { try {
             if (!checkRateLimit(socket)) return;
