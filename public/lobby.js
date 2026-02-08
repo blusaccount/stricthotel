@@ -114,8 +114,84 @@
         var el = document.getElementById('currency-amount');
         if (el && data && typeof data.balance === 'number') {
             el.textContent = data.balance;
+            
+            // Update make it rain button state
+            var rainBtn = document.getElementById('btn-make-it-rain');
+            if (rainBtn) {
+                rainBtn.disabled = data.balance < 20;
+            }
         }
     });
+
+    // --- Make It Rain Button ---
+    var rainBtn = document.getElementById('btn-make-it-rain');
+    if (rainBtn) {
+        rainBtn.addEventListener('click', function () {
+            var currentBalance = parseFloat(document.getElementById('currency-amount')?.textContent || '0');
+            if (currentBalance < 20) {
+                return;
+            }
+            
+            socket.emit('lobby-make-it-rain');
+        });
+    }
+
+    // --- Make It Rain Effect ---
+    socket.on('lobby-rain-effect', function (data) {
+        if (!data || !data.playerName) return;
+        
+        // Show toast notification
+        var toast = document.createElement('div');
+        toast.className = 'rain-toast';
+        toast.textContent = data.playerName + ' made it rain! 💸';
+        document.body.appendChild(toast);
+        
+        setTimeout(function () {
+            toast.remove();
+        }, 5000);
+        
+        // Play victory music for 20 seconds
+        var audio = new Audio('/userinput/winscreen.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(function () {
+            console.log('Audio playback failed');
+        });
+        setTimeout(function () {
+            audio.pause();
+            audio.currentTime = 0;
+        }, 20000);
+        
+        // Spawn falling coins
+        var container = document.createElement('div');
+        container.className = 'money-rain-container';
+        document.body.appendChild(container);
+        
+        var duration = 20000; // 20 seconds
+        var interval = setInterval(function () {
+            createFallingCoin(container);
+        }, 300);
+        
+        setTimeout(function () {
+            clearInterval(interval);
+            setTimeout(function () {
+                container.remove();
+            }, 3000);
+        }, duration);
+    });
+
+    function createFallingCoin(container) {
+        var coin = document.createElement('div');
+        coin.className = 'falling-coin';
+        coin.textContent = '🪙';
+        coin.style.left = Math.random() * 100 + 'vw';
+        coin.style.animationDuration = (2 + Math.random() * 2) + 's';
+        coin.style.animationDelay = Math.random() * 0.5 + 's';
+        container.appendChild(coin);
+        
+        setTimeout(function () {
+            coin.remove();
+        }, 5000);
+    }
 
     // --- Utility ---
     function escapeHtml(str) {
