@@ -1617,7 +1617,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
 
         // --- Validate LoL Username (Riot ID) ---
         socket.on('lol-validate-username', async (data) => { try {
-            if (!checkRateLimit(socket, 5)) return;
+            if (!checkRateLimit(socket, 5)) {
+                socket.emit('lol-username-result', { valid: false, reason: 'Too many requests, please wait' });
+                return;
+            }
             if (!data || typeof data !== 'object') return;
 
             const { riotId } = data;
@@ -1635,7 +1638,10 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
 
         // --- Place LoL Bet ---
         socket.on('lol-place-bet', async (data) => { try {
-            if (!checkRateLimit(socket, 5)) return;
+            if (!checkRateLimit(socket, 5)) {
+                socket.emit('lol-bet-error', { message: 'Too many requests, please wait' });
+                return;
+            }
             if (!data || typeof data !== 'object') return;
 
             const player = onlinePlayers.get(socket.id);
@@ -1731,7 +1737,17 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             console.log(`[LoL Bet] ${playerName} bet ${betAmount} on ${resolvedName} to ${betOnWin ? 'WIN' : 'LOSE'}`);
         } catch (err) {
             console.error('lol-place-bet error:', err.message);
-            socket.emit('lol-bet-error', { message: 'Failed to place bet' });
+            const safeMessages = [
+                'Invalid player name',
+                'Invalid LoL username',
+                'Invalid bet amount',
+                'Invalid bet type',
+                'Player not found'
+            ];
+            const reason = safeMessages.includes(err.message)
+                ? err.message
+                : 'Failed to place bet';
+            socket.emit('lol-bet-error', { message: reason });
         } });
 
         // --- Get Active LoL Bets ---

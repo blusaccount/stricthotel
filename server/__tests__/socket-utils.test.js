@@ -94,6 +94,7 @@ describe('validateGameType', () => {
         expect(validateGameType('watchparty')).toBe('watchparty');
         expect(validateGameType('stocks')).toBe('stocks');
         expect(validateGameType('strictbrain')).toBe('strictbrain');
+        expect(validateGameType('lol-betting')).toBe('lol-betting');
     });
 
     it('returns default for invalid types', () => {

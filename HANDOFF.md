@@ -1,3 +1,27 @@
+# HANDOFF - Fix LoL Betting "Failed to place bet" Error
+
+## What Was Done
+
+### Bug Fix: Generic error message hiding actual failure reasons
+
+Players placing LoL bets saw "Failed to place bet" with no indication of the root cause (e.g. player not found, invalid input, DB error). Three issues were addressed:
+
+1. **Specific error messages**: The catch-all handler now surfaces known safe error messages (e.g. "Player not found", "Invalid bet amount") instead of always showing "Failed to place bet". Unknown/internal errors still show the generic message to avoid leaking implementation details.
+
+2. **Missing game type**: `lol-betting` was not in the `validateGameType` allowed list. The regex also stripped hyphens, so `'lol-betting'` became `'lolbetting'` which didn't match anything and defaulted to `'maexchen'`. Fixed the regex to allow hyphens and added `'lol-betting'` to the allowed list.
+
+3. **Silent rate-limit rejection**: When rate-limited, the `lol-validate-username` and `lol-place-bet` handlers returned silently with no feedback, leaving the client UI stuck in a loading state. Now emits appropriate error events so the client can reset.
+
+## Files Changed
+
+- `server/socket-handlers.js` — rate-limit feedback for `lol-validate-username` and `lol-place-bet`; specific error messages in `lol-place-bet` catch block
+- `server/socket-utils.js` — allow hyphens in `validateGameType` regex; add `'lol-betting'` to allowed game types
+- `server/__tests__/socket-utils.test.js` — test for `lol-betting` game type validation
+
+## Verification
+
+- `npm test` — all 122 tests pass
+- `node --check server/socket-handlers.js && node --check server/socket-utils.js` — no syntax errors
 # HANDOFF - Fix Portfolio Graph Not Showing on First Visit
 
 ## What Was Done
