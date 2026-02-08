@@ -53,7 +53,8 @@ export function createQueue(guildId) {
         }),
         connection: null,
         playing: false,
-        loop: false
+        loop: false,
+        ffmpeg: null
     };
     queues.set(guildId, queue);
     return queue;
@@ -62,6 +63,7 @@ export function createQueue(guildId) {
 export function deleteQueue(guildId) {
     const queue = queues.get(guildId);
     if (queue) {
+        stopFfmpeg(queue);
         queue.player.stop();
         queue.connection?.destroy();
         queues.delete(guildId);
@@ -175,6 +177,7 @@ export async function playSong(queue, song) {
         console.log('Audio-URL erhalten');
 
         // ffmpeg streamt direkt von der URL
+        stopFfmpeg(queue);
         const ffmpeg = spawn(ffmpegPath, [
             '-reconnect', '1',
             '-reconnect_streamed', '1',
@@ -189,8 +192,15 @@ export async function playSong(queue, song) {
             'pipe:1'
         ], { stdio: ['ignore', 'pipe', 'ignore'] });
 
+        queue.ffmpeg = ffmpeg;
+
         ffmpeg.on('error', (err) => {
             console.error('ffmpeg error:', err.message);
+        });
+        ffmpeg.on('close', () => {
+            if (queue.ffmpeg === ffmpeg) {
+                queue.ffmpeg = null;
+            }
         });
 
         const resource = createAudioResource(ffmpeg.stdout, {
@@ -208,8 +218,18 @@ export async function playSong(queue, song) {
     }
 }
 
+function stopFfmpeg(queue) {
+    const proc = queue?.ffmpeg;
+    if (!proc) return;
+    queue.ffmpeg = null;
+    try {
+        proc.kill('SIGKILL');
+    } catch (e) {}
+}
+
 export function setupPlayerEvents(queue, guildId, textChannel) {
     queue.player.on(AudioPlayerStatus.Idle, async () => {
+        stopFfmpeg(queue);
         if (queue.loop && queue.songs.length > 0) {
             queue.songs.push(queue.songs.shift());
         } else {
@@ -235,6 +255,7 @@ export function setupPlayerEvents(queue, guildId, textChannel) {
 
     queue.player.on('error', error => {
         console.error('Player Error:', error.message);
+        stopFfmpeg(queue);
         textChannel.send('❌ Fehler beim Abspielen. Überspringe...').catch(() => {});
         queue.songs.shift();
         if (queue.songs.length > 0) {

@@ -38,6 +38,47 @@ Summarize what shipped and what remains.
 
 ---
 
+## ExecPlan - Security + Performance Hardening
+
+## Purpose
+Reduce brute-force risk on login, tighten DB TLS configuration, and avoid lingering ffmpeg processes in the Discord bot.
+
+## Scope
+In scope: login rate limiting, configurable DB TLS verification, ffmpeg cleanup in bot audio playback.
+Out of scope: new auth flows, full session-store migration, major bot feature changes.
+
+## Context
+- `server/index.js` login endpoint
+- `server/db.js` Postgres SSL settings
+- `bot/src/utils/player.js` ffmpeg spawning
+
+## Plan of Work
+1. Add a small in-memory rate limiter for `/login`.
+2. Make DB TLS verification configurable and secure-by-default.
+3. Track and cleanup ffmpeg processes in the Discord bot.
+4. Update handoff notes.
+
+## Progress
+- [x] Start plan
+- [x] Implement changes
+- [ ] Verify behavior
+- [x] Update handoff notes
+
+## Surprises and Discoveries
+- None.
+
+## Decision Log
+- Decision: Use a simple in-memory login rate limiter to avoid new dependencies.
+  Rationale: Keeps the change low-risk while addressing brute-force exposure.
+  Date: 2026-02-08
+
+## Verification
+- `npm test`
+- Manual: attempt repeated `/login` with wrong passwords to confirm `429` response.
+
+## Outcomes
+Login is rate-limited, DB TLS verification is configurable, and ffmpeg processes are cleaned up.
+
 ## ExecPlan - Docker Bot Runtime Fixes
 
 ## Purpose

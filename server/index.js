@@ -29,6 +29,9 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const GAME_ENABLED = String(process.env.GAME_ENABLED ?? 'true').toLowerCase() !== 'false';
+const LOGIN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const LOGIN_RATE_LIMIT_MAX = 10;
+const loginRateLimiter = new Map(); // ip -> { count, resetAt }
 
 // Trust proxy (Render terminates SSL at the proxy layer)
 app.set('trust proxy', 1);
@@ -60,9 +63,23 @@ app.use(express.json());
 
 // Login route (must be before auth middleware)
 app.post('/login', (req, res) => {
+    const now = Date.now();
+    const ip = req.ip || 'unknown';
+    const entry = loginRateLimiter.get(ip);
+    if (entry && now < entry.resetAt) {
+        entry.count += 1;
+        if (entry.count > LOGIN_RATE_LIMIT_MAX) {
+            res.set('Retry-After', Math.ceil((entry.resetAt - now) / 1000));
+            return res.status(429).json({ success: false, message: 'Too many attempts. Try again soon.' });
+        }
+    } else {
+        loginRateLimiter.set(ip, { count: 1, resetAt: now + LOGIN_RATE_LIMIT_WINDOW_MS });
+    }
+
     const { password } = req.body;
     if (password && password.toLowerCase() === PASSWORD) {
         req.session.authenticated = true;
+        loginRateLimiter.delete(ip);
         res.json({ success: true });
     } else {
         res.status(401).json({ success: false, message: 'Incorrect password' });

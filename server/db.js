@@ -11,13 +11,16 @@ try {
 
 const connectionString = process.env.DATABASE_URL || '';
 const hasDatabase = Boolean(connectionString) && Boolean(Pool);
+const sslEnabled = String(process.env.DATABASE_SSL ?? 'true').toLowerCase() !== 'false';
+const sslRejectUnauthorized = String(process.env.DATABASE_SSL_REJECT_UNAUTHORIZED ?? 'true')
+    .toLowerCase() !== 'false';
 
 let pool = null;
 
 if (hasDatabase) {
     pool = new Pool({
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: sslEnabled ? { rejectUnauthorized: sslRejectUnauthorized } : false
     });
 
     pool.on('error', (err) => {

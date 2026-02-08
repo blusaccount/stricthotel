@@ -309,6 +309,27 @@
 
 ---
 
+# HANDOFF - Security + Performance Hardening
+
+## What Was Done
+
+- Added a simple in-memory rate limit for `/login` attempts.
+- Made Postgres TLS verification configurable and secure-by-default.
+- Tracked and cleaned up ffmpeg processes in the Discord bot audio pipeline.
+
+## Files Changed
+- `server/index.js`
+- `server/db.js`
+- `bot/src/utils/player.js`
+- `PLANS.md`
+
+## Verification
+- Not run here. Suggested:
+  - `npm test`
+  - Manual: send repeated `/login` attempts and confirm `429` after limit.
+
+---
+
 # HANDOFF - Turkish Quiz State Machine Stabilization
 
 ## What Was Done
