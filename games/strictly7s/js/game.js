@@ -8,12 +8,12 @@
     var CHAR_KEY = 'stricthotel-character';
 
     var SYMBOLS = [
-        { id: 'SEVEN', label: '7' },
-        { id: 'BAR', label: 'BAR' },
-        { id: 'DIAMOND', label: 'DIAMOND' },
-        { id: 'BELL', label: 'BELL' },
-        { id: 'CHERRY', label: 'CHERRY' },
-        { id: 'LEMON', label: 'LEMON' }
+        { id: 'SEVEN', label: '7️⃣' },
+        { id: 'BAR', label: '🟫' },
+        { id: 'DIAMOND', label: '💎' },
+        { id: 'BELL', label: '🔔' },
+        { id: 'CHERRY', label: '🍒' },
+        { id: 'LEMON', label: '🍋' }
     ];
 
     var symbolById = SYMBOLS.reduce(function (acc, s) {
@@ -21,10 +21,42 @@
         return acc;
     }, {});
 
+    var REEL_HEIGHT = 96;
+    var REEL_REPEAT = 50;
     var reels = [
-        document.getElementById('reel-1'),
-        document.getElementById('reel-2'),
-        document.getElementById('reel-3')
+        {
+            frame: document.getElementById('reel-frame-1'),
+            strip: document.getElementById('reel-1'),
+            offset: 0,
+            speed: 0.75,
+            raf: 0,
+            spinning: false,
+            isStopping: false,
+            symbolIndices: {},
+            stripHeight: 0
+        },
+        {
+            frame: document.getElementById('reel-frame-2'),
+            strip: document.getElementById('reel-2'),
+            offset: 0,
+            speed: 0.85,
+            raf: 0,
+            spinning: false,
+            isStopping: false,
+            symbolIndices: {},
+            stripHeight: 0
+        },
+        {
+            frame: document.getElementById('reel-frame-3'),
+            strip: document.getElementById('reel-3'),
+            offset: 0,
+            speed: 0.95,
+            raf: 0,
+            spinning: false,
+            isStopping: false,
+            symbolIndices: {},
+            stripHeight: 0
+        }
     ];
     var statusEl = document.getElementById('status');
     var balanceEl = document.getElementById('balance-display');
@@ -34,7 +66,6 @@
 
     var selectedBet = null;
     var isSpinning = false;
-    var spinInterval = null;
     var audioEnabled = true;
     var audioCtx = null;
 
@@ -49,40 +80,127 @@
         }
     }
 
-    function pickRandomSymbol() {
-        var idx = Math.floor(Math.random() * SYMBOLS.length);
-        return SYMBOLS[idx].label;
+    function buildReelStrip(reel) {
+        var frag = document.createDocumentFragment();
+        var indices = {};
+        for (var i = 0; i < REEL_REPEAT; i++) {
+            for (var j = 0; j < SYMBOLS.length; j++) {
+                var symbol = SYMBOLS[j];
+                var item = document.createElement('div');
+                item.className = 'reel-item';
+                item.textContent = symbol.label;
+                var idx = (i * SYMBOLS.length) + j;
+                if (!indices[symbol.id]) indices[symbol.id] = [];
+                indices[symbol.id].push(idx);
+                frag.appendChild(item);
+            }
+        }
+        reel.strip.innerHTML = '';
+        reel.strip.appendChild(frag);
+        reel.symbolIndices = indices;
+        reel.stripHeight = REEL_HEIGHT * REEL_REPEAT * SYMBOLS.length;
+        reel.offset = 0;
+        reel.strip.style.transform = 'translateY(0px)';
     }
 
     function setReels(values) {
         for (var i = 0; i < reels.length; i++) {
-            reels[i].textContent = values[i] || '---';
+            var symbol = values[i] || '---';
+            reels[i].strip.innerHTML = '';
+            var item = document.createElement('div');
+            item.className = 'reel-item';
+            item.textContent = symbol;
+            reels[i].strip.appendChild(item);
         }
     }
 
     function setSpinningState(active) {
         isSpinning = active;
-        reels.forEach(function (reel) {
-            reel.classList.toggle('spinning', active);
-        });
         spinBtn.disabled = active || selectedBet === null;
     }
 
     function startSpinAnimation() {
-        if (spinInterval) {
-            clearInterval(spinInterval);
+        reels.forEach(function (reel) {
+            buildReelStrip(reel);
+            reel.frame.classList.add('spinning');
+            reel.spinning = true;
+            reel.isStopping = false;
+            startReelLoop(reel);
+        });
+    }
+
+    function startReelLoop(reel) {
+        if (reel.raf) {
+            cancelAnimationFrame(reel.raf);
+            reel.raf = 0;
         }
-        spinInterval = setInterval(function () {
-            setReels([pickRandomSymbol(), pickRandomSymbol(), pickRandomSymbol()]);
-        }, 80);
+        var last = performance.now();
+        var maxSafeOffset = reel.stripHeight - REEL_HEIGHT - (SYMBOLS.length * REEL_HEIGHT * 3);
+        var resetOffset = reel.stripHeight / 2;
+        var tick = function (ts) {
+            if (!reel.spinning || reel.isStopping) return;
+            var dt = ts - last;
+            last = ts;
+            reel.offset += reel.speed * dt;
+            if (reel.offset > maxSafeOffset) {
+                reel.offset -= resetOffset;
+            }
+            reel.strip.style.transform = 'translateY(' + (-reel.offset) + 'px)';
+            reel.raf = requestAnimationFrame(tick);
+        };
+        reel.raf = requestAnimationFrame(tick);
+    }
+
+    function stopReel(reel, symbolId, delay) {
+        setTimeout(function () {
+            reel.spinning = false;
+            reel.isStopping = true;
+            if (reel.raf) {
+                cancelAnimationFrame(reel.raf);
+                reel.raf = 0;
+            }
+
+            var indices = reel.symbolIndices[symbolId] || [];
+            if (!indices.length) {
+                reel.frame.classList.remove('spinning');
+                reel.isStopping = false;
+                return;
+            }
+
+            var currentIndex = Math.floor(reel.offset / REEL_HEIGHT);
+            var minIndex = currentIndex + (SYMBOLS.length * 2);
+            var targetIndex = null;
+            for (var i = 0; i < indices.length; i++) {
+                if (indices[i] >= minIndex) {
+                    targetIndex = indices[i];
+                    break;
+                }
+            }
+            if (targetIndex === null) {
+                targetIndex = indices[indices.length - 1];
+            }
+
+            var targetOffset = targetIndex * REEL_HEIGHT;
+            if (targetOffset > reel.stripHeight - REEL_HEIGHT) {
+                targetOffset = reel.stripHeight - REEL_HEIGHT;
+            }
+
+            reel.strip.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            reel.strip.style.transform = 'translateY(' + (-targetOffset) + 'px)';
+            reel.offset = targetOffset;
+
+            setTimeout(function () {
+                reel.strip.style.transition = '';
+                reel.frame.classList.remove('spinning');
+                reel.isStopping = false;
+            }, 650);
+        }, delay);
     }
 
     function stopSpinAnimation(finalReels) {
-        if (spinInterval) {
-            clearInterval(spinInterval);
-            spinInterval = null;
+        for (var i = 0; i < reels.length; i++) {
+            stopReel(reels[i], finalReels[i], i * 180);
         }
-        setReels(finalReels);
     }
 
     function ensureAudioContext() {
@@ -194,13 +312,15 @@
 
     socket.on('strictly7s-spin-result', function (result) {
         var finalReels = (result.reels || []).map(function (id) {
-            return symbolById[id] || id || '---';
+            return id || '---';
         });
 
         setTimeout(function () {
             stopSpinAnimation(finalReels);
-            setSpinningState(false);
-            setBalance(result.balance);
+            setTimeout(function () {
+                setSpinningState(false);
+                setBalance(result.balance);
+            }, 420);
 
             if (result.multiplier > 0) {
                 setStatus(formatWinMessage(result), 'win');
@@ -213,7 +333,17 @@
     });
 
     socket.on('strictly7s-error', function (data) {
-        stopSpinAnimation(['---', '---', '---']);
+        reels.forEach(function (reel) {
+            if (reel.raf) {
+                cancelAnimationFrame(reel.raf);
+                reel.raf = 0;
+            }
+            reel.spinning = false;
+            reel.isStopping = false;
+            reel.frame.classList.remove('spinning');
+            reel.strip.style.transition = '';
+        });
+        setReels(['---', '---', '---']);
         setSpinningState(false);
         setStatus(data && data.message ? data.message : 'Spin failed.', 'loss');
     });

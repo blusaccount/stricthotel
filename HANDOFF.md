@@ -22,6 +22,7 @@
 - Added Strictly7s lobby tile and game type validation.
 - Client registers as `strictly7s`, requests balance, and plays WebAudio tones for spin/win/loss.
  - Tuned payouts to target ~93% RTP (slight house edge).
+- Added menu back link, emoji reels, and staggered spin animation polish.
 
 ## How to Verify
 1. `node --check server/socket-handlers.js`

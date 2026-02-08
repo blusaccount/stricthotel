@@ -48,6 +48,16 @@
             margin-bottom: 16px;
         }
 
+        .back-link {
+            border: 2px solid var(--slot-border);
+            background: #121212;
+            color: var(--slot-ink);
+            padding: 6px 10px;
+            font-size: 9px;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
         .title {
             font-size: 18px;
             letter-spacing: 2px;
@@ -98,15 +108,49 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
+            font-size: 28px;
             color: var(--slot-ink);
             text-shadow: 0 2px 0 #000;
             transition: transform 0.2s ease, filter 0.2s ease;
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
         }
 
-        .reel.spinning {
+        .reel-frame {
+            border: 2px solid var(--slot-border);
+            background: linear-gradient(180deg, #101010 0%, #040404 100%);
+            box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
+        }
+
+        .reel-window {
+            height: 96px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reel-strip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            will-change: transform;
+        }
+
+        .reel-item {
+            height: 96px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            width: 100%;
+            color: var(--slot-ink);
+            text-shadow: 0 2px 0 #000;
+        }
+
+        .reel-frame.spinning .reel-window {
             animation: reelFlicker 0.12s steps(2) infinite;
-            filter: brightness(1.3);
+            filter: brightness(1.3) blur(0.6px);
+            text-shadow: 0 0 8px rgba(255, 204, 51, 0.6);
         }
 
         @keyframes reelFlicker {
@@ -221,6 +265,7 @@
 <body>
     <div class="page">
         <div class="header">
+            <a class="back-link" href="/">MENU</a>
             <div class="title">Strictly7s</div>
             <div class="balance">Balance: <span id="balance-display">...</span> SC</div>
         </div>
@@ -229,9 +274,21 @@
             <div>
                 <div class="reels">
                     <div class="payline"></div>
-                    <div class="reel" id="reel-1">---</div>
-                    <div class="reel" id="reel-2">---</div>
-                    <div class="reel" id="reel-3">---</div>
+                    <div class="reel-frame" id="reel-frame-1">
+                        <div class="reel-window">
+                            <div class="reel-strip" id="reel-1"></div>
+                        </div>
+                    </div>
+                    <div class="reel-frame" id="reel-frame-2">
+                        <div class="reel-window">
+                            <div class="reel-strip" id="reel-2"></div>
+                        </div>
+                    </div>
+                    <div class="reel-frame" id="reel-frame-3">
+                        <div class="reel-window">
+                            <div class="reel-strip" id="reel-3"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -258,13 +315,13 @@
 
                     <div class="payouts">
                         <h2>Payouts (center line)</h2>
-                        <div class="payout-line"><span>7-7-7</span><span>84x</span></div>
-                        <div class="payout-line"><span>BAR-BAR-BAR</span><span>34x</span></div>
-                        <div class="payout-line"><span>DIAMOND</span><span>25x</span></div>
-                        <div class="payout-line"><span>BELL</span><span>17x</span></div>
-                        <div class="payout-line"><span>CHERRY</span><span>13x</span></div>
-                        <div class="payout-line"><span>LEMON</span><span>8x</span></div>
-                        <div class="payout-line"><span>Two CHERRY (any)</span><span>2x</span></div>
+                        <div class="payout-line"><span>7️⃣ 7️⃣ 7️⃣</span><span>84x</span></div>
+                        <div class="payout-line"><span>🟫🟫🟫</span><span>34x</span></div>
+                        <div class="payout-line"><span>💎💎💎</span><span>25x</span></div>
+                        <div class="payout-line"><span>🔔🔔🔔</span><span>17x</span></div>
+                        <div class="payout-line"><span>🍒🍒🍒</span><span>13x</span></div>
+                        <div class="payout-line"><span>🍋🍋🍋</span><span>8x</span></div>
+                        <div class="payout-line"><span>Two 🍒 (any)</span><span>2x</span></div>
                     </div>
             </div>
         </div>
