@@ -12,6 +12,7 @@
     let answerTimeoutId = null;
     let quizEnded = false;
     let timeLeft = QUIZ_TIME;
+    let dailyDay = '';
 
     // ===== Screen Management =====
     function showScreen(name) {
@@ -25,7 +26,9 @@
         try {
             const res = await fetch('/api/turkish/daily');
             lesson = await res.json();
+            dailyDay = lesson.day || '';
             renderLesson();
+            loadLeaderboard();
         } catch (err) {
             $('lesson-topic').textContent = 'Could not load lesson';
             console.error('Failed to load lesson:', err);
@@ -34,7 +37,7 @@
 
     function renderLesson() {
         $('lesson-topic').textContent = '📖 ' + lesson.topic;
-        $('lesson-day').textContent = 'Daily Lesson #' + lesson.id;
+        $('lesson-day').textContent = 'Daily Lesson #' + lesson.id + (dailyDay ? ' · ' + dailyDay : '');
 
         const list = $('word-list');
         list.innerHTML = '';
@@ -50,6 +53,12 @@
 
     // ===== Quiz =====
     function startQuiz() {
+        const name = getPlayerName();
+        if (!name) {
+            $('name-error').textContent = 'Please enter a name.';
+            return;
+        }
+        $('name-error').textContent = '';
         resetQuizState();
         quiz = lesson.quiz;
         currentQ = 0;
@@ -180,7 +189,10 @@
         $('result-emoji').textContent = emoji;
         $('result-title').textContent = title;
         $('result-score').textContent = score + ' / ' + total;
+        $('result-meta').textContent = '';
         $('result-detail').textContent = pct + '% correct · Topic: ' + lesson.topic;
+
+        recordCompletion();
     }
 
     // ===== Helpers =====
@@ -190,6 +202,80 @@
         return div.innerHTML;
     }
 
+    function getPlayerName() {
+        const input = $('player-name');
+        const name = input ? input.value.trim() : '';
+        if (name) {
+            localStorage.setItem('stricthotel-name', name);
+            return name;
+        }
+        const stored = localStorage.getItem('stricthotel-name') || '';
+        if (stored && input) {
+            input.value = stored;
+        }
+        return stored.trim();
+    }
+
+    async function recordCompletion() {
+        const name = getPlayerName();
+        if (!name) return;
+
+        try {
+            const res = await fetch('/api/turkish/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ playerName: name })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                $('result-meta').textContent = 'Could not record streak.';
+                return;
+            }
+
+            const rewardText = data.alreadyCompleted
+                ? 'Already completed today.'
+                : '+ ' + data.rewardCoins + ' coins';
+
+            $('result-meta').textContent =
+                'Streak: ' + data.currentStreak + ' days · ' + rewardText;
+
+            loadLeaderboard();
+        } catch (err) {
+            $('result-meta').textContent = 'Could not record streak.';
+            console.error('Failed to record completion:', err);
+        }
+    }
+
+    async function loadLeaderboard() {
+        const list = $('leaderboard-list');
+        if (!list) return;
+        list.innerHTML = '<div class="leaderboard-row"><span>Loading...</span><span></span></div>';
+        try {
+            const res = await fetch('/api/turkish/leaderboard');
+            const data = await res.json();
+            if (!res.ok || !data.ok) {
+                list.innerHTML = '<div class="leaderboard-row"><span>No data</span><span></span></div>';
+                return;
+            }
+
+            if (!data.leaderboard || data.leaderboard.length === 0) {
+                list.innerHTML = '<div class="leaderboard-row"><span>No streaks yet</span><span></span></div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            data.leaderboard.forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'leaderboard-row';
+                row.innerHTML = '<span>' + (index + 1) + '. ' + escapeHtml(entry.name) +
+                    '</span><span>' + entry.currentStreak + ' days</span>';
+                list.appendChild(row);
+            });
+        } catch (err) {
+            list.innerHTML = '<div class="leaderboard-row"><span>No data</span><span></span></div>';
+        }
+    }
+
     // ===== Event Listeners =====
     $('btn-start-quiz').addEventListener('click', startQuiz);
     $('btn-replay').addEventListener('click', function () {
@@ -197,5 +283,9 @@
     });
 
     // ===== Init =====
+    const savedName = localStorage.getItem('stricthotel-name');
+    if (savedName && $('player-name')) {
+        $('player-name').value = savedName;
+    }
     loadLesson();
 })();

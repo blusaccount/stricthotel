@@ -330,6 +330,33 @@
 
 ---
 
+# HANDOFF - Turkish Daily Streaks + Leaderboard
+
+## What Was Done
+
+- Made daily quiz deterministic per UTC day (same for all users).
+- Added Turkish daily streak tracking with increasing coin rewards (up to 50 at 10 days).
+- Added a leaderboard for highest current streaks.
+- Added name input, streak/reward display, and leaderboard UI in the Turkish game.
+- Added DB table for streaks with in-memory fallback when DB is disabled.
+
+## Files Changed
+- `server/turkish-lessons.js`
+- `server/turkish-streaks.js`
+- `server/index.js`
+- `server/sql/persistence.sql`
+- `games/turkish/index.html`
+- `games/turkish/js/game.js`
+- `PLANS.md`
+
+## Verification
+- Not run here. Suggested:
+  - `node --check server/turkish-streaks.js`
+  - `node --check server/turkish-lessons.js`
+  - Manual: complete quiz on consecutive UTC days and verify streak/reward and leaderboard update.
+
+---
+
 # HANDOFF - Turkish Quiz State Machine Stabilization
 
 ## What Was Done

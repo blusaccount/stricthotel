@@ -98,6 +98,37 @@
             margin-bottom: 12px;
         }
 
+        .name-box {
+            background: var(--ds-surface);
+            border: 2px solid var(--ds-border);
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .name-box label {
+            display: block;
+            font-size: 9px;
+            margin-bottom: 8px;
+            color: var(--ds-text-dim);
+        }
+
+        .name-input {
+            width: 100%;
+            border: 2px solid var(--ds-border);
+            padding: 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            background: var(--ds-surface);
+            color: var(--ds-text);
+        }
+
+        .name-error {
+            margin-top: 8px;
+            font-size: 9px;
+            color: var(--ds-negative);
+            min-height: 14px;
+        }
+
         /* Word Cards */
         .word-list {
             display: flex;
@@ -289,6 +320,38 @@
             background: var(--ds-text-dim);
         }
 
+        .leaderboard-box {
+            background: var(--ds-surface);
+            border: 2px solid var(--ds-border);
+            padding: 12px;
+            margin-top: 16px;
+        }
+
+        .leaderboard-title {
+            font-size: 10px;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 9px;
+        }
+
+        .leaderboard-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .result-meta {
+            font-size: 9px;
+            color: var(--ds-text-dim);
+            margin-bottom: 8px;
+            line-height: 1.8;
+        }
+
         /* Mobile */
         @media (max-width: 400px) {
             .turkish-title { font-size: 13px; }
@@ -312,9 +375,20 @@
             <div class="lesson-day" id="lesson-day"></div>
         </div>
 
+        <div class="name-box">
+            <label for="player-name">Your Name (for streak rewards)</label>
+            <input class="name-input" id="player-name" maxlength="20" autocomplete="off" />
+            <div class="name-error" id="name-error"></div>
+        </div>
+
         <div class="word-list" id="word-list"></div>
 
         <button class="btn-start" id="btn-start-quiz">START QUIZ ▶</button>
+
+        <div class="leaderboard-box">
+            <div class="leaderboard-title">Top Streaks</div>
+            <div class="leaderboard-list" id="leaderboard-list"></div>
+        </div>
     </div>
 
     <!-- QUIZ SCREEN -->
@@ -337,6 +411,7 @@
             <div class="result-emoji" id="result-emoji"></div>
             <div class="result-title" id="result-title"></div>
             <div class="result-score" id="result-score"></div>
+            <div class="result-meta" id="result-meta"></div>
             <div class="result-detail" id="result-detail"></div>
             <button class="btn-replay" id="btn-replay">REVIEW WORDS ↺</button>
         </div>

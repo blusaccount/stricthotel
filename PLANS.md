@@ -79,6 +79,50 @@ Out of scope: new auth flows, full session-store migration, major bot feature ch
 ## Outcomes
 Login is rate-limited, DB TLS verification is configurable, and ffmpeg processes are cleaned up.
 
+## ExecPlan - Turkish Daily Streaks + Leaderboard
+
+## Purpose
+Ensure the Turkish daily quiz is deterministic per day, and add streak-based rewards with a leaderboard.
+
+## Scope
+In scope: deterministic daily quiz, streak tracking + rewards, leaderboard API + UI.
+Out of scope: new auth flows, full anti-cheat system, translations beyond existing data.
+
+## Context
+- `server/turkish-lessons.js` daily lesson + quiz generation
+- `server/index.js` Turkish API endpoints
+- `server/sql/persistence.sql` DB schema
+- `games/turkish/index.html` and `games/turkish/js/game.js` UI
+
+## Plan of Work
+1. Make quiz generation deterministic with a daily seed.
+2. Add streak tracking module and DB table, with in-memory fallback.
+3. Add completion + leaderboard endpoints.
+4. Update Turkish game UI to collect name, show rewards, and render leaderboard.
+5. Update handoff notes.
+
+## Progress
+- [x] Start plan
+- [x] Implement changes
+- [ ] Verify behavior
+- [x] Update handoff notes
+
+## Surprises and Discoveries
+- None.
+
+## Decision Log
+- Decision: Use UTC day number for streak tracking to match daily lesson logic.
+  Rationale: Keeps daily rotation and streaks consistent across time zones.
+  Date: 2026-02-08
+
+## Verification
+- `node --check server/turkish-streaks.js`
+- `node --check server/turkish-lessons.js`
+- Manual: complete quiz on consecutive UTC days and verify streak/reward and leaderboard update.
+
+## Outcomes
+Turkish daily quiz is deterministic; streak rewards and leaderboard are wired end-to-end.
+
 ## ExecPlan - Docker Bot Runtime Fixes
 
 ## Purpose

@@ -40,3 +40,10 @@ create table if not exists picto_messages (
   message text not null,
   created_at timestamptz not null default now()
 );
+
+create table if not exists turkish_streaks (
+  player_id bigint primary key references players(id) on delete cascade,
+  current_streak integer not null default 0,
+  max_streak integer not null default 0,
+  last_completed_day integer
+);

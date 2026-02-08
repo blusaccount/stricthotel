@@ -361,20 +361,23 @@ export function getDailyLesson(date) {
  * Build quiz questions from a lesson's words.
  * Each question asks "What does [Turkish word] mean?" with 4 choices.
  * @param {object} lesson - a lesson object
+ * @param {number} [seed] - optional deterministic seed
  * @returns {Array} array of quiz question objects
  */
-export function buildQuiz(lesson) {
+export function buildQuiz(lesson, seed = null) {
     // Collect all English meanings from all lessons for wrong answers
     const allMeanings = LESSONS.flatMap(l => l.words.map(w => w.en));
+    const dailySeed = seed === null ? getDailySeed() : seed;
+    const rng = makeSeededRng(dailySeed);
 
     return lesson.words.map(word => {
         // Get wrong answers (excluding the correct one)
         const wrongPool = allMeanings.filter(m => m !== word.en);
-        const shuffled = shuffleArray([...wrongPool]);
+        const shuffled = shuffleArraySeeded([...wrongPool], rng);
         const wrongAnswers = shuffled.slice(0, 3);
 
         // Combine and shuffle options
-        const options = shuffleArray([word.en, ...wrongAnswers]);
+        const options = shuffleArraySeeded([word.en, ...wrongAnswers], rng);
 
         return {
             question: word.tr,
@@ -396,6 +399,46 @@ export function shuffleArray(arr) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+/**
+ * Shuffle an array using a deterministic RNG.
+ * @param {Array} arr
+ * @param {Function} rng - returns [0,1)
+ * @returns {Array}
+ */
+export function shuffleArraySeeded(arr, rng) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+/**
+ * Create a simple seeded RNG (LCG).
+ * @param {number} seed
+ * @returns {Function}
+ */
+export function makeSeededRng(seed) {
+    let state = Math.floor(seed) % 2147483647;
+    if (state <= 0) state += 2147483646;
+    return function () {
+        state = (state * 16807) % 2147483647;
+        return (state - 1) / 2147483646;
+    };
+}
+
+/**
+ * Get a stable daily seed based on UTC day number.
+ * @param {Date} [date]
+ * @returns {number}
+ */
+export function getDailySeed(date) {
+    const d = date || new Date();
+    const daysSinceEpoch = Math.floor(d.getTime() / (1000 * 60 * 60 * 24));
+    return daysSinceEpoch;
 }
 
 export { LESSONS };
