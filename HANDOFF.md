@@ -649,4 +649,25 @@ Users must now enter a valid Riot ID (Name#Tag format) when placing LoL bets. Th
 - `npm test` (58 tests pass, including 4 new portfolio-history tests)
 - Manual: server starts, stocks page loads with chart section visible
 
+---
+
+# HANDOFF - Pictochat Mobile Touch Scroll Fix
+
+## What Was Done
+
+- Fixed the pictochat canvas scrolling the page when users try to draw on mobile devices.
+- Added `touch-action: none` CSS property to `#picto-canvas` and `#picto-preview` to prevent browser default touch behaviors (scrolling, pinch-zoom) on the canvas.
+- Added `e.preventDefault()` in `pointerdown` and `pointermove` handlers as defense-in-depth.
+
+## Files Changed
+
+- `shared/css/theme.css` — added `touch-action: none` to canvas elements
+- `public/pictochat.js` — added `preventDefault()` in pointer event handlers
+- `HANDOFF.md`
+
+## Verification
+
+- All 79 tests pass (`npm test`)
+- `touch-action: none` confirmed applied via computed style check in browser
+- Server starts and pictochat renders correctly on mobile viewport
 
