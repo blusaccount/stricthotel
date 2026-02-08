@@ -1,18 +1,24 @@
-# HANDOFF - LoL Bet Rate Limit Backoff + Scan Limit
+# HANDOFF - LoL Manual Check + Timeout Resolution
 
 ## What Was Done
-- Added Riot API rate-limit backoff to pause bet checking after 429 responses.
-- Added a match-details scan limit (default 5) to reduce Riot API calls.
-- Manual bet checks now respect the backoff window.
-- Added env knobs: `LOL_MATCH_SCAN_LIMIT`, `LOL_RATE_LIMIT_BACKOFF_MS`.
+- Removed the background LoL auto-checker; only manual checks trigger Riot API calls.
+- Added 50-minute bet timeout scheduling with a single auto-check at timeout.
+- Bets with no match after timeout are refunded automatically.
+- Added refund handling (`refundBet`) and refund notifications to clients.
+- Added env knobs: `LOL_BET_TIMEOUT_MS`, `LOL_MATCH_SCAN_LIMIT`, `LOL_RATE_LIMIT_BACKOFF_MS`.
 
 ## How to Verify
 1. `node --check server/lol-match-checker.js`
-2. Trigger a manual check during 429 → should return rate limit message immediately.
-3. Observe logs: `[LoL Match Checker] Skipping cycle: Riot rate limit backoff ...`
+2. `node --check server/lol-betting.js`
+3. `node --check server/socket-handlers.js`
+4. Place a bet and manually check: should resolve or report no match.
+5. Wait 50 minutes: bet should auto-resolve or refund with notification.
 
 ### Files Modified
 - `server/lol-match-checker.js`
+- `server/lol-betting.js`
+- `server/socket-handlers.js`
+- `games/lol-betting/js/game.js`
 
 # HANDOFF - Strictly7s Slot Machine
 

@@ -241,6 +241,36 @@ export async function updateBetPuuid(betId, puuid, lastMatchId) {
 }
 
 /**
+ * Get pending bets for timeout scheduling (includes bets without PUUID)
+ */
+export async function getPendingBetsForTimeout() {
+    if (!isDatabaseEnabled()) {
+        return betsMemory
+            .filter(bet => bet.status === 'pending')
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
+
+    const result = await query(
+        `select id, player_id, player_name, lol_username, bet_amount, bet_on_win, puuid, created_at
+         from lol_bets
+         where status = 'pending'
+         order by created_at asc
+         limit 1000`
+    );
+
+    return result.rows.map(row => ({
+        id: row.id,
+        playerId: row.player_id,
+        playerName: row.player_name,
+        lolUsername: row.lol_username,
+        amount: Number(row.bet_amount),
+        betOnWin: row.bet_on_win,
+        puuid: row.puuid,
+        createdAt: row.created_at
+    }));
+}
+
+/**
  * Get a specific bet by ID
  */
 export async function getBetById(betId) {
@@ -319,5 +349,46 @@ export async function resolveBet(betId, didPlayerWin) {
         playerName: bet.player_name,
         wonBet,
         payout: wonBet ? Number(bet.bet_amount) * 2 : 0  // 2x total return (includes original bet)
+    };
+}
+
+/**
+ * Refund a pending bet (timeout or no match played)
+ */
+export async function refundBet(betId) {
+    if (!isDatabaseEnabled()) {
+        const bet = betsMemory.find(b => b.id === betId);
+        if (!bet || bet.status !== 'pending') {
+            return null;
+        }
+        bet.status = 'refunded';
+        bet.result = null;
+        bet.resolvedAt = new Date().toISOString();
+        return {
+            playerId: null,
+            playerName: bet.playerName,
+            amount: bet.amount,
+            lolUsername: bet.lolUsername
+        };
+    }
+
+    const result = await query(
+        `update lol_bets
+         set status = 'refunded', result = null, resolved_at = now()
+         where id = $1 and status = 'pending'
+         returning player_id, player_name, bet_amount, lol_username`,
+        [betId]
+    );
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    const row = result.rows[0];
+    return {
+        playerId: row.player_id,
+        playerName: row.player_name,
+        amount: Number(row.bet_amount),
+        lolUsername: row.lol_username
     };
 }

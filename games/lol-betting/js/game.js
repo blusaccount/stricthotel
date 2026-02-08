@@ -240,6 +240,13 @@ socket.on('lol-bet-placed', (data) => {
     showSuccessMessage();
 });
 
+// Bet warning/info
+socket.on('lol-bet-warning', (data) => {
+    if (data && data.message) {
+        showNotification(data.message, 'info');
+    }
+});
+
 // Bet error
 socket.on('lol-bet-error', (data) => {
     showError(data.message || 'Failed to place bet');
@@ -276,6 +283,24 @@ socket.on('lol-bet-resolved', (data) => {
     }
     
     // Request updated bets list
+    socket.emit('lol-get-bets');
+});
+
+// Bet refunded notification
+socket.on('lol-bet-refunded', (data) => {
+    const myName = localStorage.getItem(NAME_KEY) || '';
+    if (data.playerName !== myName) {
+        return;
+    }
+
+    const amount = Number(data.amount || 0);
+    showNotification(`⏳ Bet timed out. ${amount.toFixed(0)} SC refunded.`, 'info');
+
+    if (data.newBalance !== undefined) {
+        playerBalance = data.newBalance;
+        balanceDisplay.textContent = `💰 ${playerBalance.toFixed(0)} SC`;
+    }
+
     socket.emit('lol-get-bets');
 });
 

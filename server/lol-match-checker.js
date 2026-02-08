@@ -1,23 +1,18 @@
 // ============== LOL MATCH CHECKER ==============
 
-import { getPendingBetsForChecking, resolveBet, getActiveBets, getPendingBetsWithoutPuuid, updateBetPuuid, getBetById } from './lol-betting.js';
+import { resolveBet, getActiveBets, updateBetPuuid, getBetById, getPendingBetsForTimeout, refundBet } from './lol-betting.js';
 import { addBalance } from './currency.js';
 import { getMatchHistory, getMatchDetails, isRiotApiEnabled, validateRiotId, getRiotApiDisabledReason } from './riot-api.js';
 import { withTransaction } from './db.js';
 
-let checkerInterval = null;
 let io = null;
 let isRunning = false;
+const betTimeouts = new Map(); // betId -> timeoutId
 
-// Configurable interval (default: 60 seconds)
-const CHECK_INTERVAL_MS = Number(process.env.LOL_CHECK_INTERVAL_MS) || 60000;
 const MATCH_HISTORY_CHECK_COUNT = 20;
 const MATCH_DETAILS_SCAN_LIMIT = Math.max(1, Number(process.env.LOL_MATCH_SCAN_LIMIT) || 5);
 const RATE_LIMIT_BACKOFF_MS = Math.max(10000, Number(process.env.LOL_RATE_LIMIT_BACKOFF_MS) || 180000);
-
-// Track last check time per PUUID to avoid excessive API calls
-const lastCheckTime = new Map(); // puuid -> timestamp
-const MIN_CHECK_INTERVAL_PER_PUUID = 30000; // 30 seconds minimum between checks for same PUUID
+const BET_TIMEOUT_MS = Math.max(1, Number(process.env.LOL_BET_TIMEOUT_MS) || (50 * 60 * 1000));
 
 // Track last manual check time per bet ID to prevent abuse
 const lastManualCheckTime = new Map(); // betId -> timestamp
@@ -40,197 +35,63 @@ function isRiotRateLimited() {
 /**
  * Start the background match checker
  */
-export function startMatchChecker(socketIo) {
-    if (!isRiotApiEnabled()) {
-        console.log('[LoL Match Checker] Skipped: RIOT_API_KEY not configured');
-        return;
-    }
-
+export async function startMatchChecker(socketIo) {
+    io = socketIo;
     if (isRunning) {
         console.warn('[LoL Match Checker] Already running');
         return;
     }
-
-    io = socketIo;
     isRunning = true;
-
-    console.log(`[LoL Match Checker] Starting with ${CHECK_INTERVAL_MS}ms interval`);
-
-    // Run immediately on start, then on interval
-    checkPendingBets();
-    checkerInterval = setInterval(checkPendingBets, CHECK_INTERVAL_MS);
+    console.log('[LoL Match Checker] Auto-checker disabled. Scheduling timeouts only.');
+    await schedulePendingBetTimeouts();
 }
 
 /**
  * Stop the background match checker
  */
 export function stopMatchChecker() {
-    if (checkerInterval) {
-        clearInterval(checkerInterval);
-        checkerInterval = null;
-    }
     isRunning = false;
+    for (const [, timeoutId] of betTimeouts) {
+        clearTimeout(timeoutId);
+    }
+    betTimeouts.clear();
     console.log('[LoL Match Checker] Stopped');
 }
 
-/**
- * Backfill PUUID for bets that were placed without it
- * NOTE: This runs on every polling cycle. For production systems with high volume,
- * consider adding a retry counter or last_attempt timestamp to avoid repeatedly
- * attempting to backfill bets that consistently fail validation.
- */
-async function backfillMissingPuuids() {
-    try {
-        const incompleteBets = await getPendingBetsWithoutPuuid();
-        
-        if (incompleteBets.length === 0) {
-            return; // Nothing to backfill
-        }
+export function scheduleBetTimeout(bet) {
+    if (!bet || !bet.id || !bet.createdAt) return;
+    if (betTimeouts.has(bet.id)) return;
 
-        console.log(`[LoL Match Checker] Backfilling ${incompleteBets.length} incomplete bets`);
+    const createdAtMs = Date.parse(bet.createdAt);
+    const now = Date.now();
+    const dueMs = Number.isFinite(createdAtMs) ? (createdAtMs + BET_TIMEOUT_MS) : (now + BET_TIMEOUT_MS);
+    const delay = Math.max(0, dueMs - now);
 
-        for (const bet of incompleteBets) {
-            try {
-                // Validate Riot ID and get PUUID
-                const validation = await validateRiotId(bet.lolUsername);
-                
-                if (!validation.valid || !validation.puuid) {
-                    console.warn(`[LoL Match Checker] Could not validate ${bet.lolUsername} for bet ${bet.id}`);
-                    continue;
-                }
+    const timeoutId = setTimeout(() => {
+        betTimeouts.delete(bet.id);
+        resolveBetByTimeout(bet).catch(err => {
+            console.error(`[LoL Bet Timeout] Error resolving bet ${bet.id}:`, err.message);
+        });
+    }, delay);
 
-                // Update bet with PUUID only (resolution is timestamp-based)
-                const success = await updateBetPuuid(bet.id, validation.puuid, null);
-                
-                if (success) {
-                    console.log(`[LoL Match Checker] Backfilled bet ${bet.id}: ${bet.lolUsername} -> ${validation.puuid}`);
-                }
+    betTimeouts.set(bet.id, timeoutId);
+}
 
-                // Add small delay to respect rate limits
-                await delay(1000);
-            } catch (err) {
-                if (isRiotRateLimitError(err)) {
-                    setRiotRateLimitBackoff();
-                    console.warn('[LoL Match Checker] Riot API rate limited during backfill. Backing off.');
-                    return;
-                }
-                console.error(`[LoL Match Checker] Error backfilling bet ${bet.id}:`, err.message);
-                // Continue with next bet even if one fails
-            }
-        }
-    } catch (err) {
-        console.error('[LoL Match Checker] Error in backfill process:', err.message);
-        // Don't crash the main loop
+export function clearBetTimeout(betId) {
+    const timeoutId = betTimeouts.get(betId);
+    if (timeoutId) {
+        clearTimeout(timeoutId);
+        betTimeouts.delete(betId);
     }
 }
 
-/**
- * Main checking function - runs periodically
- */
-async function checkPendingBets() {
-    try {
-        // Bail out early if API key was rejected (401/403)
-        const disabledReason = getRiotApiDisabledReason();
-        if (disabledReason) {
-            console.warn(`[LoL Match Checker] Skipping cycle: ${disabledReason}`);
-            return;
-        }
-
-        if (isRiotRateLimited()) {
-            const waitMs = Math.max(0, riotRateLimitedUntil - Date.now());
-            console.warn(`[LoL Match Checker] Skipping cycle: Riot rate limit backoff (${Math.ceil(waitMs / 1000)}s)`);
-            return;
-        }
-
-        // STEP 1: Backfill PUUID for bets that were placed without it
-        await backfillMissingPuuids();
-
-        // STEP 2: Check bets that have PUUID
-        const pendingBets = await getPendingBetsForChecking();
-        
-        if (pendingBets.length === 0) {
-            return; // Nothing to check
-        }
-
-        // Group bets by PUUID to minimize API calls
-        const betsByPuuid = new Map();
-        for (const bet of pendingBets) {
-            if (!betsByPuuid.has(bet.puuid)) {
-                betsByPuuid.set(bet.puuid, []);
-            }
-            betsByPuuid.get(bet.puuid).push(bet);
-        }
-
-        console.log(`[LoL Match Checker] Checking ${pendingBets.length} bets for ${betsByPuuid.size} players`);
-
-        // Check each unique PUUID
-        for (const [puuid, bets] of betsByPuuid) {
-            // Rate limiting: skip if we checked this PUUID too recently
-            const lastCheck = lastCheckTime.get(puuid) || 0;
-            const now = Date.now();
-            if (now - lastCheck < MIN_CHECK_INTERVAL_PER_PUUID) {
-                continue; // Skip this PUUID for now
-            }
-
-            try {
-                await checkPlayerMatches(puuid, bets);
-                lastCheckTime.set(puuid, now);
-                
-                // Add small delay between different players to respect rate limits
-                await delay(1000);
-            } catch (err) {
-                if (isRiotRateLimitError(err)) {
-                    setRiotRateLimitBackoff();
-                    console.warn('[LoL Match Checker] Riot API rate limited. Backing off.');
-                    return;
-                }
-                console.error(`[LoL Match Checker] Error checking ${bets[0].lolUsername}:`, err.message);
-                // Continue with next player even if one fails
-            }
-        }
-    } catch (err) {
-        console.error('[LoL Match Checker] Error in check loop:', err.message);
-        // Don't crash the loop - just log and continue on next interval
+async function schedulePendingBetTimeouts() {
+    const pendingBets = await getPendingBetsForTimeout();
+    for (const bet of pendingBets) {
+        scheduleBetTimeout(bet);
     }
 }
 
-/**
- * Check for new matches for a specific player
- */
-async function checkPlayerMatches(puuid, bets) {
-    // Fetch recent match history
-    const matchIds = await getMatchHistory(puuid, MATCH_HISTORY_CHECK_COUNT);
-    
-    if (matchIds.length === 0) {
-        return; // No matches found
-    }
-
-    const scanIds = matchIds.slice(0, MATCH_DETAILS_SCAN_LIMIT);
-    const matchDetailsCache = new Map();
-
-    // Resolve each bet against a match selected for that specific bet
-    for (const bet of bets) {
-        const selection = await selectResolvingMatchForBet(bet, scanIds, matchDetailsCache);
-        if (!selection.matchId) {
-            continue;
-        }
-
-        const matchDetails = selection.matchDetails;
-        if (!matchDetails || !matchDetails.info || !matchDetails.info.participants) {
-            console.warn(`[LoL Match Checker] Invalid match data for ${selection.matchId}`);
-            continue;
-        }
-
-        const participant = matchDetails.info.participants.find(p => p.puuid === puuid);
-        if (!participant) {
-            console.warn(`[LoL Match Checker] Player not found in match ${selection.matchId}`);
-            continue;
-        }
-
-        const didPlayerWin = participant.win === true;
-        await resolveBetAndNotify(bet, didPlayerWin, selection.matchId);
-    }
-}
 
 async function getCachedMatchDetails(matchId, cache) {
     if (cache.has(matchId)) {
@@ -276,6 +137,37 @@ async function selectResolvingMatchForBet(bet, matchIds, matchDetailsCache) {
     return { matchId: null, matchDetails: null };
 }
 
+async function refundBetAndNotify(bet, reason, matchId = null) {
+    const refund = await refundBet(bet.id);
+    if (!refund) {
+        return;
+    }
+
+    clearBetTimeout(bet.id);
+
+    const newBalance = await addBalance(bet.playerName, refund.amount, 'lol_bet_refund', {
+        betId: bet.id,
+        lolUsername: bet.lolUsername,
+        reason,
+        matchId
+    });
+
+    if (io) {
+        io.emit('lol-bet-refunded', {
+            betId: bet.id,
+            playerName: bet.playerName,
+            lolUsername: bet.lolUsername,
+            amount: refund.amount,
+            reason,
+            matchId,
+            newBalance
+        });
+
+        const allBets = await getActiveBets();
+        io.emit('lol-bets-update', { bets: allBets });
+    }
+}
+
 /**
  * Resolve a bet and notify the player
  */
@@ -287,6 +179,8 @@ async function resolveBetAndNotify(bet, didPlayerWin, matchId) {
             console.warn(`[LoL Match Checker] Failed to resolve bet ${bet.id}`);
             return;
         }
+
+        clearBetTimeout(bet.id);
 
         const { wonBet, payout } = result;
 
@@ -323,13 +217,6 @@ async function resolveBetAndNotify(bet, didPlayerWin, matchId) {
     } catch (err) {
         console.error(`[LoL Match Checker] Error resolving bet ${bet.id}:`, err.message);
     }
-}
-
-/**
- * Utility: delay for a number of milliseconds
- */
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function getMatchEndTimestamp(matchDetails) {
@@ -542,5 +429,62 @@ export async function manualCheckBetStatus(betId, playerName) {
             error: 'API_ERROR',
             message: 'Riot API error. Please try again later.'
         };
+    }
+}
+
+async function resolveBetByTimeout(bet) {
+    try {
+        const freshBet = await getBetById(bet.id);
+        if (!freshBet || freshBet.status !== 'pending') {
+            return;
+        }
+
+        if (!isRiotApiEnabled() || isRiotRateLimited()) {
+            await refundBetAndNotify(freshBet, 'api_unavailable');
+            return;
+        }
+
+        let puuid = freshBet.puuid;
+        if (!puuid) {
+            const validation = await validateRiotId(freshBet.lolUsername);
+            if (!validation.valid || !validation.puuid) {
+                await refundBetAndNotify(freshBet, 'missing_puuid');
+                return;
+            }
+            puuid = validation.puuid;
+            await updateBetPuuid(freshBet.id, puuid, null);
+        }
+
+        const matchIds = await getMatchHistory(puuid, MATCH_HISTORY_CHECK_COUNT);
+        if (!matchIds.length) {
+            await refundBetAndNotify(freshBet, 'no_match');
+            return;
+        }
+
+        const scanIds = matchIds.slice(0, MATCH_DETAILS_SCAN_LIMIT);
+        const matchDetailsCache = new Map();
+        const selection = await selectResolvingMatchForBet(freshBet, scanIds, matchDetailsCache);
+        if (!selection.matchId || !selection.matchDetails) {
+            await refundBetAndNotify(freshBet, 'no_match_after_bet');
+            return;
+        }
+
+        const participant = selection.matchDetails.info?.participants?.find(p => p.puuid === puuid);
+        if (!participant) {
+            await refundBetAndNotify(freshBet, 'player_not_found', selection.matchId);
+            return;
+        }
+
+        const didPlayerWin = participant.win === true;
+        await resolveBetAndNotify(freshBet, didPlayerWin, selection.matchId);
+    } catch (err) {
+        if (isRiotRateLimitError(err)) {
+            setRiotRateLimitBackoff();
+        }
+        console.error(`[LoL Bet Timeout] Error resolving bet ${bet.id}:`, err.message);
+        const freshBet = await getBetById(bet.id);
+        if (freshBet && freshBet.status === 'pending') {
+            await refundBetAndNotify(freshBet, 'timeout_error');
+        }
     }
 }

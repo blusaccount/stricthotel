@@ -45,8 +45,8 @@ import {
 import { recordSnapshot, getHistory } from './portfolio-history.js';
 import { loadStrokes, saveStroke, deleteStroke, clearStrokes, loadMessages, saveMessage, clearMessages, PICTO_MAX_MESSAGES } from './pictochat-store.js';
 import { placeBet, getActiveBets, getPlayerBets, resolveBet } from './lol-betting.js';
-import { parseRiotId, validateRiotId, getMatchHistory, isRiotApiEnabled } from './riot-api.js';
-import { manualCheckBetStatus } from './lol-match-checker.js';
+import { parseRiotId, validateRiotId } from './riot-api.js';
+import { manualCheckBetStatus, scheduleBetTimeout } from './lol-match-checker.js';
 
 // ============== INPUT VALIDATION ==============
 
@@ -1938,25 +1938,9 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 return;
             }
 
-            // Server-side validation: look up PUUID to prevent client tampering
-            let puuid = null;
-            let lastMatchId = null;
-            if (isRiotApiEnabled()) {
-                try {
-                    const validation = await validateRiotId(resolvedName);
-                    if (validation.valid && validation.puuid) {
-                        puuid = validation.puuid;
-                        // Fetch last match ID
-                        const matchHistory = await getMatchHistory(puuid, 1);
-                        if (matchHistory.length > 0) {
-                            lastMatchId = matchHistory[0];
-                        }
-                    }
-                } catch (apiErr) {
-                    console.warn(`[LoL Bet] Could not fetch PUUID/match history for ${resolvedName}:`, apiErr.message);
-                    // Continue without puuid/lastMatchId - bet can still be placed
-                }
-            }
+            // No server-side Riot API calls on bet placement
+            const puuid = typeof data.puuid === 'string' ? data.puuid : null;
+            const lastMatchId = null;
 
             let newBalance;
             let bet;
@@ -2009,16 +1993,16 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 newBalance
             });
 
-            // Emit warning if bet was placed without PUUID (automatic resolution not available)
-            if (!puuid) {
-                socket.emit('lol-bet-warning', {
-                    message: 'Automatic bet resolution is not active. Bets may need to be resolved manually.'
-                });
-            }
+            // Inform about manual resolution + timeout
+            socket.emit('lol-bet-warning', {
+                message: 'Bets resolve only via manual check. After 50 minutes they auto-resolve/refund.'
+            });
 
             // Broadcast updated bets list to all clients
             const allBets = await getActiveBets();
             io.emit('lol-bets-update', { bets: allBets });
+
+            scheduleBetTimeout(bet);
 
             console.log(`[LoL Bet] ${playerName} bet ${betAmount} on ${resolvedName} to ${betOnWin ? 'WIN' : 'LOSE'}`);
         } catch (err) {

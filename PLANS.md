@@ -116,6 +116,45 @@ Out of scope: DB schema changes, leaderboards, admin controls.
 
 ---
 
+## ExecPlan - LoL Manual Check + Timeout Resolution
+
+## Purpose
+Remove the LoL auto-checker, switch to manual checks only, and auto-resolve/refund bets after 50 minutes with a single timeout check.
+
+## Scope
+In scope: server-side bet timeout scheduling, refund handling, manual check cleanup, and client notifications.  
+Out of scope: new admin tools, DB schema changes.
+
+## Context
+- `server/lol-match-checker.js`
+- `server/lol-betting.js`
+- `server/socket-handlers.js`
+- `server/index.js`
+- `games/lol-betting/js/game.js`
+
+## Plan of Work
+1. Replace background checker with timeout scheduler and refund logic.
+2. Add refund helper to lol-betting and wire socket notifications.
+3. Update client to handle refund notifications.
+4. Document handoff and verification.
+
+## Progress
+- [x] Start plan
+- [x] Implement changes
+- [ ] Verify behavior
+- [x] Update handoff notes
+
+## Verification
+- `node --check server/lol-match-checker.js`
+- `node --check server/lol-betting.js`
+- `node --check server/socket-handlers.js`
+- Manual: place bet, run manual check, then wait 50 min to see auto resolve/refund.
+
+## Outcomes
+- Pending.
+
+---
+
 ## ExecPlan - Security + Performance Hardening
 
 ## Purpose
