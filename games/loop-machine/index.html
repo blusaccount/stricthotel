@@ -548,6 +548,77 @@
             </div>
         </div>
 
+        <!-- Bass Lab -->
+        <div class="synth-section">
+            <h2 id="bass-header" class="synth-header">BASS LAB ▼</h2>
+            <div id="bass-controls" class="synth-controls">
+                <!-- Wave selection -->
+                <div class="synth-row">
+                    <label class="synth-label">WAVE:</label>
+                    <div class="wave-buttons">
+                        <button class="wave-btn active" data-wave="sine" data-target="bass" disabled>SIN</button>
+                        <button class="wave-btn" data-wave="square" data-target="bass" disabled>SQR</button>
+                        <button class="wave-btn" data-wave="sawtooth" data-target="bass" disabled>SAW</button>
+                        <button class="wave-btn" data-wave="triangle" data-target="bass" disabled>TRI</button>
+                    </div>
+                </div>
+                
+                <!-- Note selection -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-note">NOTE:</label>
+                    <select id="bass-note" class="synth-select" disabled>
+                        <option value="32.70">C1 (33Hz)</option>
+                        <option value="41.20">E1 (41Hz)</option>
+                        <option value="49.00">G1 (49Hz)</option>
+                        <option value="65.41" selected>C2 (65Hz)</option>
+                        <option value="82.41">E2 (82Hz)</option>
+                        <option value="98.00">G2 (98Hz)</option>
+                        <option value="130.81">C3 (131Hz)</option>
+                    </select>
+                </div>
+                
+                <!-- Cutoff slider -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-cutoff">CUTOFF:</label>
+                    <input type="range" id="bass-cutoff" class="synth-slider" 
+                           min="100" max="2000" step="50" value="800" disabled>
+                    <span class="synth-value" id="bass-cutoff-value">800</span>
+                </div>
+                
+                <!-- Resonance slider -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-resonance">RESO:</label>
+                    <input type="range" id="bass-resonance" class="synth-slider" 
+                           min="1" max="200" step="1" value="10" disabled>
+                    <span class="synth-value" id="bass-resonance-value">1.0</span>
+                </div>
+                
+                <!-- Attack slider -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-attack">ATTACK:</label>
+                    <input type="range" id="bass-attack" class="synth-slider" 
+                           min="1" max="50" step="1" value="1" disabled>
+                    <span class="synth-value" id="bass-attack-value">0.01s</span>
+                </div>
+                
+                <!-- Decay slider -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-decay">DECAY:</label>
+                    <input type="range" id="bass-decay" class="synth-slider" 
+                           min="10" max="200" step="1" value="50" disabled>
+                    <span class="synth-value" id="bass-decay-value">0.50s</span>
+                </div>
+                
+                <!-- Distortion slider -->
+                <div class="synth-row">
+                    <label class="synth-label" for="bass-distortion">DIST:</label>
+                    <input type="range" id="bass-distortion" class="synth-slider" 
+                           min="0" max="100" step="1" value="0" disabled>
+                    <span class="synth-value" id="bass-distortion-value">0%</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Synth Lab -->
         <div class="synth-section">
             <h2 id="synth-header" class="synth-header">SYNTH LAB ▼</h2>

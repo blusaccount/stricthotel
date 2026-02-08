@@ -149,6 +149,15 @@ const loopState = {
         attack: 0.01,
         decay: 0.2,
         volume: 0.3
+    },
+    bass: {
+        waveform: 'sine',
+        frequency: 65.41,
+        cutoff: 800,
+        resonance: 1,
+        attack: 0.01,
+        decay: 0.5,
+        distortion: 0
     }
 };
 
@@ -2110,6 +2119,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 isPlaying: loopState.isPlaying,
                 listeners: Array.from(loopState.listeners.values()),
                 synth: loopState.synth,
+                bass: loopState.bass,
                 masterVolume: loopState.masterVolume
             });
 
@@ -2257,6 +2267,55 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             console.log(`[LoopMachine] Master volume set to ${Math.round(loopState.masterVolume * 100)}%`);
         } catch (err) { console.error('loop-set-master-volume error:', err.message); } });
 
+        socket.on('loop-set-bass', (data) => { try {
+            if (!checkRateLimit(socket, 5)) return;
+            if (!data || typeof data !== 'object') return;
+
+            // Validate and clamp all values
+            const validWaveforms = ['sine', 'square', 'sawtooth', 'triangle'];
+            const waveform = validWaveforms.includes(data.waveform) ? data.waveform : 'sine';
+            
+            const frequency = typeof data.frequency === 'number' 
+                ? Math.max(30, Math.min(200, data.frequency))
+                : 65.41;
+            
+            const cutoff = typeof data.cutoff === 'number'
+                ? Math.max(100, Math.min(2000, data.cutoff))
+                : 800;
+            
+            const resonance = typeof data.resonance === 'number'
+                ? Math.max(0.1, Math.min(20, data.resonance))
+                : 1;
+            
+            const attack = typeof data.attack === 'number'
+                ? Math.max(0.01, Math.min(0.5, data.attack))
+                : 0.01;
+            
+            const decay = typeof data.decay === 'number'
+                ? Math.max(0.1, Math.min(2.0, data.decay))
+                : 0.5;
+            
+            const distortion = typeof data.distortion === 'number'
+                ? Math.max(0, Math.min(1, data.distortion))
+                : 0;
+
+            // Update state
+            loopState.bass = {
+                waveform,
+                frequency,
+                cutoff,
+                resonance,
+                attack,
+                decay,
+                distortion
+            };
+
+            // Broadcast to all listeners
+            io.to(LOOP_ROOM).emit('loop-bass-updated', loopState.bass);
+
+            console.log(`[LoopMachine] Bass settings updated: ${waveform} @ ${frequency.toFixed(2)}Hz`);
+        } catch (err) { console.error('loop-set-bass error:', err.message); } });
+
         socket.on('loop-clear', () => { try {
             if (!checkRateLimit(socket, 3)) return;
 
@@ -2276,6 +2335,17 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 volume: 0.3
             };
 
+            // Reset bass to defaults
+            loopState.bass = {
+                waveform: 'sine',
+                frequency: 65.41,
+                cutoff: 800,
+                resonance: 1,
+                attack: 0.01,
+                decay: 0.5,
+                distortion: 0
+            };
+
             // Broadcast full sync to all listeners
             io.to(LOOP_ROOM).emit('loop-sync', {
                 grid: loopState.grid,
@@ -2283,6 +2353,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
                 isPlaying: loopState.isPlaying,
                 listeners: Array.from(loopState.listeners.values()),
                 synth: loopState.synth,
+                bass: loopState.bass,
                 masterVolume: loopState.masterVolume
             });
 

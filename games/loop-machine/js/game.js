@@ -35,6 +35,16 @@ const synthSettings = {
     volume: 0.3
 };
 
+const bassSettings = {
+    waveform: 'sine',
+    frequency: 65.41, // C2
+    cutoff: 800,
+    resonance: 1,
+    attack: 0.01,
+    decay: 0.5,
+    distortion: 0
+};
+
 // ===== Audio Context & Synthesis =====
 let audioContext;
 let masterGainNode;
@@ -189,18 +199,55 @@ function playBass() {
     
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
     
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(60, now);
+    // Use bassSettings
+    osc.type = bassSettings.waveform;
+    osc.frequency.setValueAtTime(bassSettings.frequency, now);
     
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    // Filter
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(bassSettings.cutoff, now);
+    filter.frequency.exponentialRampToValueAtTime(
+        Math.max(50, bassSettings.cutoff * 0.3),
+        now + bassSettings.attack + bassSettings.decay
+    );
+    filter.Q.value = bassSettings.resonance;
     
-    osc.connect(gain);
+    // Envelope: attack then decay
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + bassSettings.attack);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + bassSettings.attack + bassSettings.decay);
+    
+    osc.connect(filter);
+    
+    // Optional distortion
+    if (bassSettings.distortion > 0) {
+        const distortion = audioContext.createWaveShaper();
+        distortion.curve = makeDistortionCurve(bassSettings.distortion * 100);
+        filter.connect(distortion);
+        distortion.connect(gain);
+    } else {
+        filter.connect(gain);
+    }
+    
     gain.connect(masterGainNode);
     
+    const duration = bassSettings.attack + bassSettings.decay;
     osc.start(now);
-    osc.stop(now + 0.3);
+    osc.stop(now + duration);
+}
+
+function makeDistortionCurve(amount) {
+    const samples = 44100;
+    const curve = new Float32Array(samples);
+    const deg = Math.PI / 180;
+    
+    for (let i = 0; i < samples; i++) {
+        const x = (i * 2 / samples) - 1;
+        curve[i] = (3 + amount) * x * 20 * deg / (Math.PI + amount * Math.abs(x));
+    }
+    return curve;
 }
 
 function playTom() {
@@ -552,6 +599,7 @@ socket.on('disconnect', () => {
     document.getElementById('bpm-input').disabled = true;
     document.getElementById('master-volume').disabled = true;
     enableSynthControls(false);
+    enableBassControls(false);
 });
 
 socket.on('loop-sync', (data) => {
@@ -582,6 +630,12 @@ socket.on('loop-sync', (data) => {
         updateSynthUI();
     }
     
+    // Update bass settings
+    if (data.bass) {
+        Object.assign(bassSettings, data.bass);
+        updateBassUI();
+    }
+    
     // Update playing state
     state.isPlaying = data.isPlaying;
     updatePlayPauseButton();
@@ -605,6 +659,7 @@ socket.on('loop-sync', (data) => {
     document.getElementById('bpm-input').disabled = false;
     document.getElementById('master-volume').disabled = false;
     enableSynthControls(true);
+    enableBassControls(true);
     
     setStatus('Synced', 'success');
 });
@@ -660,6 +715,12 @@ socket.on('loop-master-volume-updated', (data) => {
     document.getElementById('master-volume-value').textContent = Math.round(data.masterVolume * 100) + '%';
 });
 
+socket.on('loop-bass-updated', (data) => {
+    console.log('[LoopMachine] Bass updated', data);
+    Object.assign(bassSettings, data);
+    updateBassUI();
+});
+
 // ===== Synth Helpers =====
 function emitSynthSettings() {
     socket.emit('loop-set-synth', { ...synthSettings });
@@ -703,8 +764,8 @@ function updateSynthUI() {
 }
 
 function enableSynthControls(enabled) {
-    // Enable/disable wave buttons
-    document.querySelectorAll('.wave-btn').forEach(btn => {
+    // Enable/disable wave buttons for synth
+    document.querySelectorAll('.wave-btn:not([data-target="bass"])').forEach(btn => {
         btn.disabled = !enabled;
     });
     
@@ -714,6 +775,66 @@ function enableSynthControls(enabled) {
     
     // Enable/disable all sliders
     const sliders = ['synth-cutoff', 'synth-resonance', 'synth-attack', 'synth-decay', 'synth-volume'];
+    sliders.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+    });
+}
+
+// ===== Bass Helpers =====
+function emitBassSettings() {
+    socket.emit('loop-set-bass', { ...bassSettings });
+}
+
+function updateBassUI() {
+    // Update wave buttons
+    document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.wave === bassSettings.waveform);
+    });
+    
+    // Update note dropdown
+    const noteSelect = document.getElementById('bass-note');
+    if (noteSelect) noteSelect.value = bassSettings.frequency;
+    
+    // Update sliders and their value displays
+    const cutoffSlider = document.getElementById('bass-cutoff');
+    const cutoffValue = document.getElementById('bass-cutoff-value');
+    if (cutoffSlider) cutoffSlider.value = bassSettings.cutoff;
+    if (cutoffValue) cutoffValue.textContent = bassSettings.cutoff;
+    
+    const resoSlider = document.getElementById('bass-resonance');
+    const resoValue = document.getElementById('bass-resonance-value');
+    if (resoSlider) resoSlider.value = Math.round(bassSettings.resonance * 10);
+    if (resoValue) resoValue.textContent = (bassSettings.resonance).toFixed(1);
+    
+    const attackSlider = document.getElementById('bass-attack');
+    const attackValue = document.getElementById('bass-attack-value');
+    if (attackSlider) attackSlider.value = Math.round(bassSettings.attack * 100);
+    if (attackValue) attackValue.textContent = (bassSettings.attack).toFixed(2) + 's';
+    
+    const decaySlider = document.getElementById('bass-decay');
+    const decayValue = document.getElementById('bass-decay-value');
+    if (decaySlider) decaySlider.value = Math.round(bassSettings.decay * 100);
+    if (decayValue) decayValue.textContent = (bassSettings.decay).toFixed(2) + 's';
+    
+    const distSlider = document.getElementById('bass-distortion');
+    const distValue = document.getElementById('bass-distortion-value');
+    if (distSlider) distSlider.value = Math.round(bassSettings.distortion * 100);
+    if (distValue) distValue.textContent = Math.round(bassSettings.distortion * 100) + '%';
+}
+
+function enableBassControls(enabled) {
+    // Enable/disable wave buttons for bass
+    document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+        btn.disabled = !enabled;
+    });
+    
+    // Enable/disable note dropdown
+    const noteSelect = document.getElementById('bass-note');
+    if (noteSelect) noteSelect.disabled = !enabled;
+    
+    // Enable/disable all sliders
+    const sliders = ['bass-cutoff', 'bass-resonance', 'bass-attack', 'bass-decay', 'bass-distortion'];
     sliders.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = !enabled;
@@ -769,7 +890,7 @@ if (synthHeader && synthControls) {
 }
 
 // Wave buttons
-document.querySelectorAll('.wave-btn').forEach(btn => {
+document.querySelectorAll('.wave-btn:not([data-target="bass"])').forEach(btn => {
     btn.addEventListener('click', () => {
         if (btn.disabled) return;
         initAudio();
@@ -846,6 +967,99 @@ if (volSlider && volValue) {
         synthSettings.volume = parseInt(e.target.value, 10) / 100;
         volValue.textContent = Math.round(synthSettings.volume * 100) + '%';
         emitSynthSettings();
+    });
+}
+
+// ===== Bass Controls =====
+// Collapsible toggle
+const bassHeader = document.getElementById('bass-header');
+const bassControls = document.getElementById('bass-controls');
+if (bassHeader && bassControls) {
+    bassHeader.addEventListener('click', () => {
+        const isHidden = bassControls.style.display === 'none';
+        bassControls.style.display = isHidden ? '' : 'none';
+        bassHeader.classList.toggle('collapsed', !isHidden);
+    });
+}
+
+// Wave buttons
+document.querySelectorAll('.wave-btn[data-target="bass"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        initAudio();
+        bassSettings.waveform = btn.dataset.wave;
+        updateBassUI();
+        emitBassSettings();
+    });
+});
+
+// Note dropdown
+const bassNoteSelect = document.getElementById('bass-note');
+if (bassNoteSelect) {
+    bassNoteSelect.addEventListener('change', (e) => {
+        initAudio();
+        bassSettings.frequency = parseFloat(e.target.value);
+        emitBassSettings();
+    });
+}
+
+// Cutoff slider
+const bassCutoffSlider = document.getElementById('bass-cutoff');
+const bassCutoffValue = document.getElementById('bass-cutoff-value');
+if (bassCutoffSlider && bassCutoffValue) {
+    bassCutoffSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.cutoff = parseInt(e.target.value, 10);
+        bassCutoffValue.textContent = bassSettings.cutoff;
+        emitBassSettings();
+    });
+}
+
+// Resonance slider
+const bassResoSlider = document.getElementById('bass-resonance');
+const bassResoValue = document.getElementById('bass-resonance-value');
+if (bassResoSlider && bassResoValue) {
+    bassResoSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.resonance = parseInt(e.target.value, 10) / 10;
+        bassResoValue.textContent = bassSettings.resonance.toFixed(1);
+        emitBassSettings();
+    });
+}
+
+// Attack slider
+const bassAttackSlider = document.getElementById('bass-attack');
+const bassAttackValue = document.getElementById('bass-attack-value');
+if (bassAttackSlider && bassAttackValue) {
+    bassAttackSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.attack = parseInt(e.target.value, 10) / 100;
+        bassAttackValue.textContent = bassSettings.attack.toFixed(2) + 's';
+        emitBassSettings();
+    });
+}
+
+// Decay slider
+const bassDecaySlider = document.getElementById('bass-decay');
+const bassDecayValue = document.getElementById('bass-decay-value');
+if (bassDecaySlider && bassDecayValue) {
+    bassDecaySlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.decay = parseInt(e.target.value, 10) / 100;
+        bassDecayValue.textContent = bassSettings.decay.toFixed(2) + 's';
+        emitBassSettings();
+    });
+}
+
+// Distortion slider
+const bassDistSlider = document.getElementById('bass-distortion');
+const bassDistValue = document.getElementById('bass-distortion-value');
+if (bassDistSlider && bassDistValue) {
+    bassDistSlider.addEventListener('input', (e) => {
+        initAudio();
+        bassSettings.distortion = parseInt(e.target.value, 10) / 100;
+        bassDistValue.textContent = Math.round(bassSettings.distortion * 100) + '%';
+        emitBassSettings();
     });
 }
 
