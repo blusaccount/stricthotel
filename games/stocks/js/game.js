@@ -170,9 +170,11 @@
             cls = 'open';
             label = 'US MARKET OPEN';
         } else if (state === 'PRE' || state === 'PREPRE') {
+            // PREPRE = extended pre-market (Yahoo Finance)
             cls = 'pre';
             label = 'US MARKET PRE-MARKET';
         } else if (state === 'POST' || state === 'POSTPOST') {
+            // POSTPOST = extended after-hours (Yahoo Finance)
             cls = 'post';
             label = 'US MARKET AFTER-HOURS';
         }
