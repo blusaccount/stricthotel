@@ -18,7 +18,7 @@
         return acc;
     }, {});
 
-    const REEL_HEIGHT = 96;
+    const REEL_HEIGHT = 160;
     const REEL_REPEAT = 50;
     const reels = [
         {
