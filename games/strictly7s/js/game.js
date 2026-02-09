@@ -60,6 +60,7 @@
     const spinBtn = document.getElementById('spin-btn');
     const betButtons = Array.prototype.slice.call(document.querySelectorAll('.bet-btn'));
     const soundToggle = document.getElementById('sound-toggle');
+    const ambienceVolumeSlider = document.getElementById('ambience-volume');
     const historyList = document.getElementById('history-list');
 
     let selectedBet = null;
@@ -69,6 +70,28 @@
     let pendingResultTimer = null;
     let currentBalance = null;
     let spinHistory = [];
+
+    // Audio files
+    const audioFiles = {
+        ambience: new Audio('/games/strictly7s/audio/casino-ambiance.mp3'),
+        smallWin: new Audio('/games/strictly7s/audio/slots-medium-win.mp3'),
+        // Medium and big wins share the same audio instance (only 3 win sound files available)
+        bigWin: new Audio('/games/strictly7s/audio/slots-big-win.mp3'),
+        jackpot: new Audio('/games/strictly7s/audio/slots-jackpot.mp3')
+    };
+    // Reuse bigWin for mediumWin
+    audioFiles.mediumWin = audioFiles.bigWin;
+
+    // Configure ambience
+    audioFiles.ambience.loop = true;
+    audioFiles.ambience.volume = 0.3;
+
+    // Configure win sounds at half volume
+    audioFiles.smallWin.volume = 0.5;
+    audioFiles.bigWin.volume = 0.5;
+    audioFiles.jackpot.volume = 0.5;
+
+    let ambienceStarted = false;
 
     function setStatus(text, kind) {
         statusEl.textContent = text;
@@ -294,51 +317,99 @@
         }, 600);
     }
 
-    function ensureAudioContext() {
-        if (!audioCtx) {
-            const AudioCtor = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtor) return null;
-            audioCtx = new AudioCtor();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        return audioCtx;
-    }
-
-    function playTone(freq, durationMs, type, volume) {
+    function playAudioFile(audio) {
         if (!audioEnabled) return;
-        const ctx = ensureAudioContext();
-        if (!ctx) return;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = type || 'square';
-        osc.frequency.value = freq;
-        gain.gain.value = volume || 0.03;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
-        osc.stop(ctx.currentTime + durationMs / 1000);
+        // Reset playback position if audio is ready
+        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA or greater
+            audio.currentTime = 0;
+        }
+        audio.play().catch(err => console.log('Audio play failed:', err));
     }
 
     function playSpinSound() {
-        playTone(320, 80, 'square', 0.02);
+        // Keep the synthesized spin sound - it's quick feedback
+        if (!audioEnabled) return;
+        if (!audioCtx) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtor) audioCtx = new AudioCtor();
+        }
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 320;
+        gain.gain.value = 0.02;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+        osc.stop(audioCtx.currentTime + 0.08);
     }
 
     function playWinSound(multiplier) {
-        if (multiplier >= 20) {
-            playTone(520, 120, 'square', 0.04);
-            setTimeout(() => { playTone(660, 160, 'square', 0.04); }, 140);
-            setTimeout(() => { playTone(820, 220, 'square', 0.04); }, 320);
-        } else {
-            playTone(440, 150, 'square', 0.03);
-            setTimeout(() => { playTone(620, 180, 'square', 0.03); }, 160);
+        if (!audioEnabled) return;
+        
+        // Map multipliers to sounds:
+        // Small: 2x-10x (CHERRY 10x, LEMON 7x, Two CHERRY 2x)
+        // Medium: 18x-31x (BELL 18x, DIAMOND 31x)
+        // Big: 53x (BAR 53x)
+        // Jackpot: 148x (SEVEN 148x)
+        
+        if (multiplier >= 148) {
+            // Jackpot
+            playAudioFile(audioFiles.jackpot);
+        } else if (multiplier >= 53) {
+            // Big win
+            playAudioFile(audioFiles.bigWin);
+        } else if (multiplier >= 18) {
+            // Medium win
+            playAudioFile(audioFiles.mediumWin);
+        } else if (multiplier >= 2) {
+            // Small win
+            playAudioFile(audioFiles.smallWin);
         }
     }
 
     function playLoseSound() {
-        playTone(160, 140, 'sawtooth', 0.02);
+        // Keep the synthesized lose sound
+        if (!audioEnabled) return;
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 160;
+        gain.gain.value = 0.02;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.14);
+        osc.stop(audioCtx.currentTime + 0.14);
+    }
+
+    function startAmbience() {
+        if (audioEnabled && !ambienceStarted) {
+            audioFiles.ambience.play()
+                .then(() => {
+                    ambienceStarted = true;
+                })
+                .catch(err => {
+                    // Autoplay blocked - will retry on first user interaction
+                    console.log('Ambience autoplay blocked (expected):', err.message);
+                });
+        } else if (audioEnabled && ambienceStarted) {
+            // Already started, just play if paused
+            if (audioFiles.ambience.paused) {
+                audioFiles.ambience.play().catch(err => console.log('Ambience play failed:', err));
+            }
+        }
+    }
+
+    function stopAmbience() {
+        audioFiles.ambience.pause();
     }
 
     function registerPlayer() {
@@ -361,6 +432,11 @@
         btn.classList.add('active');
         spinBtn.disabled = isSpinning || selectedBet === null;
         setStatus(`Bet set to ${betValue} SC. Ready to spin.`, 'info');
+        
+        // Start ambience on first user interaction
+        if (!ambienceStarted) {
+            startAmbience();
+        }
     }
 
     function handleSpin() {
@@ -455,9 +531,19 @@
         audioEnabled = !audioEnabled;
         soundToggle.textContent = `Sound: ${audioEnabled ? 'On' : 'Off'}`;
         if (audioEnabled) {
-            ensureAudioContext();
+            startAmbience();
+        } else {
+            stopAmbience();
         }
     });
+
+    ambienceVolumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        audioFiles.ambience.volume = volume;
+    });
+
+    // Note: Ambience will start on first user interaction (bet selection)
+    // to comply with browser autoplay policies
 
     setReels(['---', '---', '---']);
 })();
