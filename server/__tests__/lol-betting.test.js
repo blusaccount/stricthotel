@@ -6,9 +6,22 @@ vi.mock('../db.js', () => ({
     query: vi.fn()
 }));
 
-const { placeBet, getActiveBets, getPlayerBets, resolveBet, getPendingBetsForChecking, getPendingBetsWithoutPuuid, updateBetPuuid, getBetById } = await import('../lol-betting.js');
+let placeBet, getActiveBets, getPlayerBets, resolveBet, getPendingBetsForChecking, getPendingBetsWithoutPuuid, updateBetPuuid, getBetById;
 
 describe('lol-betting (in-memory mode)', () => {
+    beforeEach(async () => {
+        vi.resetModules();
+        const mod = await import('../lol-betting.js');
+        placeBet = mod.placeBet;
+        getActiveBets = mod.getActiveBets;
+        getPlayerBets = mod.getPlayerBets;
+        resolveBet = mod.resolveBet;
+        getPendingBetsForChecking = mod.getPendingBetsForChecking;
+        getPendingBetsWithoutPuuid = mod.getPendingBetsWithoutPuuid;
+        updateBetPuuid = mod.updateBetPuuid;
+        getBetById = mod.getBetById;
+    });
+
     describe('placeBet', () => {
         it('creates a pending bet', async () => {
             const bet = await placeBet('alice', 'Player#NA1', 100, true);
@@ -37,6 +50,7 @@ describe('lol-betting (in-memory mode)', () => {
 
     describe('getActiveBets', () => {
         it('returns pending bets', async () => {
+            await placeBet('testPlayer', 'Test#NA1', 100, true);
             const bets = await getActiveBets();
             expect(bets.length).toBeGreaterThan(0);
             expect(bets.every(b => b.status === 'pending')).toBe(true);
@@ -55,6 +69,7 @@ describe('lol-betting (in-memory mode)', () => {
 
     describe('getPlayerBets', () => {
         it('returns bets for a specific player', async () => {
+            await placeBet('alice', 'Alice#NA1', 100, true);
             const bets = await getPlayerBets('alice');
             expect(bets.length).toBeGreaterThan(0);
             expect(bets.every(b => b.playerName === 'alice')).toBe(true);
@@ -115,12 +130,13 @@ describe('lol-betting (in-memory mode)', () => {
             
             const incomplete = await getPendingBetsWithoutPuuid();
             
-            // Should return bets without puuid OR without lastMatchId
+            // Should return bets without puuid (function filters on !bet.puuid)
             const noPuuid = incomplete.filter(b => b.playerName === 'lisa');
             expect(noPuuid.length).toBe(1);
             
+            // Mike's bet has puuid, so it won't be returned
             const onlyPuuid = incomplete.filter(b => b.playerName === 'mike');
-            expect(onlyPuuid.length).toBe(1);
+            expect(onlyPuuid.length).toBe(0);
             
             // Should NOT return complete bets
             const complete = incomplete.filter(b => b.playerName === 'kelly');
