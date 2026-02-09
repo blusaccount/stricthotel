@@ -75,6 +75,7 @@
     const audioFiles = {
         ambience: new Audio('/games/strictly7s/audio/casino-ambiance.mp3'),
         smallWin: new Audio('/games/strictly7s/audio/slots-medium-win.mp3'),
+        // Medium and big wins use the same file (only 3 win sound files available)
         mediumWin: new Audio('/games/strictly7s/audio/slots-big-win.mp3'),
         bigWin: new Audio('/games/strictly7s/audio/slots-big-win.mp3'),
         jackpot: new Audio('/games/strictly7s/audio/slots-jackpot.mp3')
@@ -89,6 +90,8 @@
     audioFiles.mediumWin.volume = 0.5;
     audioFiles.bigWin.volume = 0.5;
     audioFiles.jackpot.volume = 0.5;
+
+    let ambienceStarted = false;
 
     function setStatus(text, kind) {
         statusEl.textContent = text;
@@ -385,8 +388,20 @@
     }
 
     function startAmbience() {
-        if (audioEnabled) {
-            audioFiles.ambience.play().catch(err => console.log('Ambience play failed:', err));
+        if (audioEnabled && !ambienceStarted) {
+            audioFiles.ambience.play()
+                .then(() => {
+                    ambienceStarted = true;
+                })
+                .catch(err => {
+                    // Autoplay blocked - will retry on first user interaction
+                    console.log('Ambience autoplay blocked (expected):', err.message);
+                });
+        } else if (audioEnabled && ambienceStarted) {
+            // Already started, just play if paused
+            if (audioFiles.ambience.paused) {
+                audioFiles.ambience.play().catch(err => console.log('Ambience play failed:', err));
+            }
         }
     }
 
@@ -414,6 +429,11 @@
         btn.classList.add('active');
         spinBtn.disabled = isSpinning || selectedBet === null;
         setStatus(`Bet set to ${betValue} SC. Ready to spin.`, 'info');
+        
+        // Start ambience on first user interaction
+        if (!ambienceStarted) {
+            startAmbience();
+        }
     }
 
     function handleSpin() {
@@ -519,8 +539,8 @@
         audioFiles.ambience.volume = volume;
     });
 
-    // Start ambience on page load
-    startAmbience();
+    // Note: Ambience will start on first user interaction (bet selection)
+    // to comply with browser autoplay policies
 
     setReels(['---', '---', '---']);
 })();
