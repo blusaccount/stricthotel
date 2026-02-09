@@ -1,16 +1,19 @@
-# Handoff: Deduplicate game wrappers in games/strictbrain/js/game.js
+# Handoff: Remove dead CSS from shared/css/theme.css
 
 ## What Changed
 
-Deduplicated the 10 individual game wrapper functions (5 single + 5 versus) in `games/strictbrain/js/game.js`:
-- Added `GAME_CONFIGS` map with per-game DOM element IDs for both single and versus modes
-- Added `launchGame(gameId, mode)` function that builds callbacks based on mode and calls the appropriate `run*Game()` engine
-- `startSingleGame()` now calls `launchGame(gameId, 'single')` instead of a switch over individual wrappers
-- `startVersusGame()` now calls `launchGame(gameId, 'versus')` instead of a switch over individual wrappers
-- Deleted all 10 individual wrapper functions: `startMathGame`, `startStroopGame`, `startChimpGame`, `startReactionGame`, `startScrambleGame`, `startVersusMathGame`, `startVersusStroopGame`, `startVersusChimpGame`, `startVersusReactionGame`, `startVersusScrambleGame`
-- All `run*Game()` engine functions are unchanged
-- All special cases preserved: reaction clears score display, chimp single has `stopTimerFn: stopTimer` (versus: null), chimp single prepends 'Level ' to score display
+Removed 39 lines of dead/duplicate CSS from `shared/css/theme.css` (2683 → 2644 lines):
+
+1. **Removed unused `.waiting-box` class** (8 lines) — not referenced in any HTML or JS file
+2. **Removed unused `.waiting-dots` rules** (`.waiting-dots`, `.waiting-dots span`, two `nth-child` rules — 17 lines) — not referenced in any HTML or JS file
+3. **Removed duplicate `.winner-crown`** at line 855 (4 lines) — fully overridden by identical selector at line 1827 in the Victory Screen section
+4. **Removed duplicate `.winner-name`** at line 860 (6 lines) — fully overridden by identical selector at line 1838 in the Victory Screen section
+5. **Removed orphaned section comment** `/* ===== Game Over ===== */` and `/* ===== Waiting Indicator ===== */`
+
+Kept:
+- `.waiting-text` — used in `games/maexchen/index.html`
+- `@keyframes pulse` — used by `.sidebar-turn-indicator`
 
 ## How to Verify
 1. `npm test` — All 184 tests pass
-2. Open StrictBrain in browser — all 5 mini-games work identically in both single-player and versus modes
+2. Visually verify maexchen, watchparty, and lobby pages render correctly (waiting text, victory screen)
