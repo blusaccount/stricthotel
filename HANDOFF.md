@@ -1,3 +1,19 @@
+# Handoff: Extract Strictly7s inline CSS (2025-07-15)
+
+## What Changed
+
+Extracted the inline `<style>` block from `games/strictly7s/index.html` into a new external stylesheet `games/strictly7s/strictly7s.css`. The `<style>` tag was replaced with a `<link rel="stylesheet" href="strictly7s.css">` tag. No CSS rules were modified.
+
+### Files Modified
+- `games/strictly7s/index.html` — replaced inline `<style>` block with `<link>` tag
+- `games/strictly7s/strictly7s.css` — new file containing the extracted CSS (342 lines)
+
+### How to Verify
+- Open Strictly7s game in a browser and confirm styles load correctly
+- Compare `strictly7s.css` content against the original inline styles
+
+---
+
 # Handoff: Extract Stocks inline CSS (2025-07-15)
 
 ## What Changed
