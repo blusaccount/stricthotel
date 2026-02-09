@@ -13,7 +13,7 @@
     let keepAliveIntervalId = null;
 
     // Interval (ms) for keep-alive pings to prevent free-tier hosting spin-down
-    var KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
+    const KEEP_ALIVE_INTERVAL = 4 * 60 * 1000; // 4 minutes
 
     // --- Extract YouTube Video ID from URL or ID ---
     function extractVideoId(input) {
