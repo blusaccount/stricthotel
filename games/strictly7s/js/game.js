@@ -273,7 +273,8 @@
         });
         
         // Remove animation class after it completes
-        const duration = isJackpot ? 2000 : 1200; // 5 iterations * 0.4s or 3 iterations * 0.4s
+        // Regular win: 3 iterations × 0.4s = 1.2s; Jackpot: 5 iterations × 0.4s = 2.0s
+        const duration = isJackpot ? 2000 : 1200;
         setTimeout(() => {
             reels.forEach((reel) => {
                 reel.frame.classList.remove(animClass);
