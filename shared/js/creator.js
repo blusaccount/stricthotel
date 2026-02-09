@@ -25,6 +25,7 @@
     let pixels = createEmptyGrid();
     let selectedColor = 1; // Default: alien green
     let isDrawing = false;
+    let pixelsLoaded = false; // Track if pixels have been loaded from localStorage
 
     let onCompleteCallback = null;
 
@@ -273,6 +274,7 @@
     function confirm() {
         // Save to localStorage
         localStorage.setItem('stricthotel-character', JSON.stringify(pixels));
+        pixelsLoaded = true; // Mark as loaded since we just saved
 
         // Close creator
         const creator = document.getElementById('character-creator');
@@ -330,6 +332,10 @@
 
     // Get character data for network transfer
     function getCharacter() {
+        // Load from localStorage if not already loaded
+        if (!pixelsLoaded) {
+            loadSavedCharacter();
+        }
         return {
             pixels: pixels,
             dataURL: renderToDataURL(64)
@@ -342,11 +348,14 @@
         if (saved) {
             try {
                 pixels = JSON.parse(saved);
+                pixelsLoaded = true;
                 return true;
             } catch (e) {
                 pixels = createEmptyGrid();
+                pixelsLoaded = true;
             }
         }
+        pixelsLoaded = true;
         return false;
     }
 
