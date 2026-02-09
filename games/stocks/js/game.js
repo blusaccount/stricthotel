@@ -529,7 +529,7 @@
                 holdingsHtml = '<div style="color:var(--ds-text-dim);font-size:7px;padding:4px 0;">No holdings</div>';
             }
 
-            html += `<div class="leaderboard-card" data-idx="${i}">`
+            html += `<div class="leaderboard-card">`
                 + `<div class="leaderboard-header">`
                 + `<span class="leaderboard-rank">#${i + 1}</span>`
                 + leaderboardAvatarHtml(p)
@@ -580,7 +580,7 @@
                 holdingsHtml = '<div style="color:var(--ds-text-dim);font-size:7px;padding:4px 0;">No holdings</div>';
             }
 
-            html += `<div class="leaderboard-card" data-idx="${i}">`
+            html += `<div class="leaderboard-card">`
                 + `<div class="leaderboard-header">`
                 + `<span class="leaderboard-rank">#${i + 1}</span>`
                 + leaderboardAvatarHtml(p)
@@ -603,20 +603,15 @@
     };
 
     // Event delegation for leaderboard card expand/collapse
-    leaderboardContainer.addEventListener('click', (e) => {
+    const toggleLeaderboardCard = (e) => {
         const card = e.target.closest('.leaderboard-card');
         if (card) {
             card.classList.toggle('expanded');
         }
-    });
+    };
 
-    // Event delegation for performance leaderboard card expand/collapse
-    performanceLeaderboardContainer.addEventListener('click', (e) => {
-        const card = e.target.closest('.leaderboard-card');
-        if (card) {
-            card.classList.toggle('expanded');
-        }
-    });
+    leaderboardContainer.addEventListener('click', toggleLeaderboardCard);
+    performanceLeaderboardContainer.addEventListener('click', toggleLeaderboardCard);
 
     refreshBtn.addEventListener('click', () => {
         socket.emit('stock-get-leaderboard');
