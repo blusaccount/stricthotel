@@ -1,3 +1,43 @@
+# Handoff: Fix Stale Ticker Prices in Partial API Responses (2026-02-09)
+
+## What Changed
+
+### Bug: Portfolios show zero gain/loss despite open market
+
+When Yahoo Finance's batch API returned partial results (some symbols missing from the response), `fetchTickerQuotes()` replaced the entire cache with only the symbols that were returned. This caused portfolio snapshots to fall back to `avgCost` for the missing symbols, showing zero gain/loss.
+
+**Root cause:** In `server/routes/stocks.js`, the ticker cache was fully replaced on each successful batch fetch. If a batch returned 50 out of 55 symbols, the 5 missing ones lost their cached prices entirely.
+
+**Fix:** `fetchTickerQuotes()` now merges new batch results with the existing cache. Symbols present in the new batch get updated prices; symbols missing from the batch retain their previously-cached prices.
+
+### Improvement: Silent fetch failures now logged
+
+`getQuoteForSymbol()` in `server/handlers/stocks.js` caught errors from individual Yahoo Finance lookups but silently returned `null`. This made it impossible to diagnose price fetch failures.
+
+**Fix:** Added `console.error` logging in the catch block.
+
+### Files Modified
+
+- `server/routes/stocks.js` — Merge batch results with cached data instead of replacing
+- `server/handlers/stocks.js` — Log errors in `getQuoteForSymbol` catch block
+- `server/__tests__/stocks-route.test.js` — 5 new tests covering merge behavior
+
+## What Didn't Change
+
+- Buy/sell trade logic, price validation, rate limiting
+- Ticker symbol list and cache durations
+- Client-side code
+- Database schema
+- Portfolio snapshot logic in `stock-game.js`
+
+## How to Verify
+
+1. `npm test` — All 198 tests pass (193 original + 5 new)
+2. Simulate a partial Yahoo Finance response (some symbols missing) and verify portfolio still shows price changes for previously-cached symbols
+3. Check server logs for `[getQuoteForSymbol]` entries when individual lookups fail
+
+---
+
 # Handoff: Fix Stock Portfolio/Price Updates (2026-02-09)
 
 ## What Changed

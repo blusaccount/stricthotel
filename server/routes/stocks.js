@@ -115,6 +115,16 @@ export function createStocksRouter({ getYahooFinance, isStockGameEnabled }) {
                 }
 
                 if (results.length > 0) {
+                    // Merge: keep previously-cached prices for symbols
+                    // missing from this batch (partial API responses)
+                    if (tickerCache.data) {
+                        const freshSymbols = new Set(results.map(r => r.symbol));
+                        for (const prev of tickerCache.data) {
+                            if (!freshSymbols.has(prev.symbol)) {
+                                results.push(prev);
+                            }
+                        }
+                    }
                     tickerCache = { data: results, ts: Date.now() };
                 }
                 return results;
