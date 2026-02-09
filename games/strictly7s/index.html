@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strictly7s</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎰</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -304,6 +305,46 @@
             cursor: pointer;
         }
 
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--slot-dim);
+        }
+
+        .volume-control label {
+            white-space: nowrap;
+        }
+
+        .volume-control input[type="range"] {
+            width: 100px;
+            height: 4px;
+            background: #3a3a3a;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: var(--slot-accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .volume-control input[type="range"]::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: var(--slot-accent);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
         .status {
             min-height: 20px;
             font-size: 10px;
@@ -440,6 +481,11 @@
                 <div class="spin-row">
                     <button id="spin-btn" class="spin-btn" disabled>Spin</button>
                     <button id="sound-toggle" class="sound-toggle" type="button">Sound: On</button>
+                </div>
+
+                <div class="volume-control">
+                    <label for="ambience-volume">Ambience:</label>
+                    <input type="range" id="ambience-volume" min="0" max="100" value="30">
                 </div>
 
                     <div class="payouts">
