@@ -41,13 +41,18 @@ vi.mock('../lol-betting.js', () => ({
     updateBetPuuid: vi.fn()
 }));
 
-const { manualCheckBetStatus } = await import('../lol-match-checker.js');
+let manualCheckBetStatus;
 
 describe('manualCheckBetStatus', () => {
     let betIdCounter = 1;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        vi.resetModules();
+        // Re-import to get fresh module state (including lastManualCheckTime Map)
+        const mod = await import('../lol-match-checker.js');
+        manualCheckBetStatus = mod.manualCheckBetStatus;
+        
         mockIsRiotApiEnabled.mockReturnValue(true);
         mockGetRiotApiDisabledReason.mockReturnValue('');
         // Use large random starting point to avoid conflicts between tests
@@ -407,7 +412,7 @@ describe('manualCheckBetStatus', () => {
         expect(mockResolveBet).toHaveBeenCalledWith(betId, false);
     });
 
-    it('returns error when match data is invalid', async () => {
+    it('returns no new match when match data is invalid', async () => {
         const betId = betIdCounter++;
         mockGetBetById.mockResolvedValue({
             id: betId,
@@ -423,9 +428,9 @@ describe('manualCheckBetStatus', () => {
         mockGetMatchDetails.mockResolvedValue(null);
 
         const result = await manualCheckBetStatus(betId, 'testPlayer');
-        expect(result.success).toBe(false);
-        expect(result.error).toBe('INVALID_MATCH_DATA');
-        expect(result.message).toContain('incomplete or invalid');
+        expect(result.success).toBe(true);
+        expect(result.resolved).toBe(false);
+        expect(result.message).toContain('No new match');
     });
 
     it('returns error when player not found in match data', async () => {
