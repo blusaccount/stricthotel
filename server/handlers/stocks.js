@@ -41,6 +41,7 @@ async function getQuoteForSymbol(symbol, quotes, _getYahooFinance) {
             return quote;
         }
     } catch (e) {
+        console.error(`[getQuoteForSymbol] Failed to fetch ${symbol}:`, e.message);
         return null;
     }
 

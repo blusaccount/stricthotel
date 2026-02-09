@@ -1,3 +1,76 @@
+# Handoff: Add Market Status Indicator to Stock Game (2026-02-09)
+
+## What Changed
+
+### Feature: Market open/closed indicator
+
+Users confused "US market closed = zero price change on stocks like AAPL/GOOGL" with broken prices. Added a market status indicator that shows whether the US stock market is currently open, closed, pre-market, or after-hours.
+
+**Root cause of confusion:** When the US market is closed, Yahoo Finance returns `change: 0` and `pct: 0` for US stocks. Without a status indicator, this looks identical to a pricing bug.
+
+### Files Modified
+
+- `server/routes/stocks.js` — Extract `marketState` field from Yahoo Finance quotes and include it in the `/api/ticker` response
+- `games/stocks/index.html` — Added `#market-status` element above the search bar in the MARKET section
+- `games/stocks/stocks.css` — Styled the market status indicator with colored dots (green=open, red=closed, amber=pre/post)
+- `games/stocks/js/game.js` — Added `updateMarketStatus()` that reads `marketState` from AAPL/MSFT quotes and displays the appropriate status
+- `server/__tests__/stocks-route.test.js` — 2 new tests for `marketState` field inclusion
+
+## What Didn't Change
+
+- Buy/sell trade logic, portfolio calculations, leaderboard
+- Cache durations and merge behavior
+- Database schema
+- Trading is still allowed 24/7 regardless of market status
+
+## How to Verify
+
+1. `npm test` — All 200 tests pass (198 previous + 2 new)
+2. Visit the stock game page — when the US market is closed, a red "US MARKET CLOSED" banner appears above the search bar
+3. When the US market is open (Mon-Fri 9:30-16:00 ET), a green "US MARKET OPEN" banner appears
+
+---
+
+# Handoff: Fix Stale Ticker Prices in Partial API Responses (2026-02-09)
+
+## What Changed
+
+### Bug: Portfolios show zero gain/loss despite open market
+
+When Yahoo Finance's batch API returned partial results (some symbols missing from the response), `fetchTickerQuotes()` replaced the entire cache with only the symbols that were returned. This caused portfolio snapshots to fall back to `avgCost` for the missing symbols, showing zero gain/loss.
+
+**Root cause:** In `server/routes/stocks.js`, the ticker cache was fully replaced on each successful batch fetch. If a batch returned 50 out of 55 symbols, the 5 missing ones lost their cached prices entirely.
+
+**Fix:** `fetchTickerQuotes()` now merges new batch results with the existing cache. Symbols present in the new batch get updated prices; symbols missing from the batch retain their previously-cached prices.
+
+### Improvement: Silent fetch failures now logged
+
+`getQuoteForSymbol()` in `server/handlers/stocks.js` caught errors from individual Yahoo Finance lookups but silently returned `null`. This made it impossible to diagnose price fetch failures.
+
+**Fix:** Added `console.error` logging in the catch block.
+
+### Files Modified
+
+- `server/routes/stocks.js` — Merge batch results with cached data instead of replacing
+- `server/handlers/stocks.js` — Log errors in `getQuoteForSymbol` catch block
+- `server/__tests__/stocks-route.test.js` — 5 new tests covering merge behavior
+
+## What Didn't Change
+
+- Buy/sell trade logic, price validation, rate limiting
+- Ticker symbol list and cache durations
+- Client-side code
+- Database schema
+- Portfolio snapshot logic in `stock-game.js`
+
+## How to Verify
+
+1. `npm test` — All 198 tests pass (193 original + 5 new)
+2. Simulate a partial Yahoo Finance response (some symbols missing) and verify portfolio still shows price changes for previously-cached symbols
+3. Check server logs for `[getQuoteForSymbol]` entries when individual lookups fail
+
+---
+
 # Handoff: Fix Stock Portfolio/Price Updates (2026-02-09)
 
 ## What Changed
