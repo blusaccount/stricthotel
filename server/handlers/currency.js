@@ -17,7 +17,7 @@ export function registerCurrencyHandlers(socket, io, { checkRateLimit, onlinePla
         broadcastOnlinePlayers(io);
 
         // Persist character portrait to database
-        if (character) saveCharacter(name, character);
+        if (character) await saveCharacter(name, character);
 
         // Send currency balance to the player
         socket.emit('balance-update', { balance: await getBalance(name) });
