@@ -1,3 +1,19 @@
+# Handoff: Extract Stocks inline CSS (2025-07-15)
+
+## What Changed
+
+Extracted the inline `<style>` block from `games/stocks/index.html` into a new external stylesheet `games/stocks/stocks.css`. The `<style>` tag was replaced with a `<link rel="stylesheet" href="stocks.css">` tag. No CSS rules were modified.
+
+### Files Modified
+- `games/stocks/index.html` — replaced inline `<style>` block with `<link>` tag
+- `games/stocks/stocks.css` — new file containing the extracted CSS (682 lines)
+
+### How to Verify
+- Open Stock Market game in a browser and confirm styles load correctly
+- Compare `stocks.css` content against the original inline styles
+
+---
+
 # Handoff: Extract StrictBrain inline CSS (2025-07-14)
 
 ## What Changed
