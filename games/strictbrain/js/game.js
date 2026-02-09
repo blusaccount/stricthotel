@@ -360,14 +360,17 @@
         let difficulty = 1;
 
         const area = $(areaId);
+        const submitBtnId = answerId + '-submit';
         area.innerHTML =
             '<div class="math-problem" id="' + problemId + '"></div>' +
             '<input type="number" class="math-input" id="' + answerId + '" autocomplete="off" inputmode="numeric">' +
+            '<button class="game-submit-btn" id="' + submitBtnId + '">✓ SENDEN</button>' +
             '<div class="math-feedback" id="' + feedbackId + '"></div>';
 
         const problemEl = $(problemId);
         const answerEl = $(answerId);
         const feedbackEl = $(feedbackId);
+        const submitBtn = $(submitBtnId);
         let currentAnswer = 0;
 
         function nextProblem() {
@@ -396,25 +399,31 @@
             answerEl.focus();
         }
 
+        function submitAnswer() {
+            const val = parseInt(answerEl.value, 10);
+            if (val === currentAnswer) {
+                score++;
+                streak++;
+                if (streak >= 3) { difficulty++; streak = 0; }
+                feedbackEl.textContent = '✓ Richtig!';
+                feedbackEl.className = 'math-feedback correct';
+                onScore(score);
+                nextProblem();
+            } else {
+                streak = 0;
+                feedbackEl.textContent = '✗ ' + currentAnswer;
+                feedbackEl.className = 'math-feedback wrong';
+                setTimeout(nextProblem, 600);
+            }
+        }
+
         answerEl.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                const val = parseInt(answerEl.value, 10);
-                if (val === currentAnswer) {
-                    score++;
-                    streak++;
-                    if (streak >= 3) { difficulty++; streak = 0; }
-                    feedbackEl.textContent = '✓ Richtig!';
-                    feedbackEl.className = 'math-feedback correct';
-                    onScore(score);
-                    nextProblem();
-                } else {
-                    streak = 0;
-                    feedbackEl.textContent = '✗ ' + currentAnswer;
-                    feedbackEl.className = 'math-feedback wrong';
-                    setTimeout(nextProblem, 600);
-                }
+                submitAnswer();
             }
         });
+
+        submitBtn.addEventListener('click', submitAnswer);
 
         nextProblem();
 
@@ -694,10 +703,12 @@
             usedWords.push(word);
 
             const scrambled = scrambleWord(word);
+            const submitBtnId = answerId + '-submit';
 
             area.innerHTML =
                 '<div class="scramble-letters" id="' + displayId + '"></div>' +
                 '<input type="text" class="scramble-input" id="' + answerId + '" autocomplete="off" maxlength="' + (word.length + 2) + '" placeholder="Wort eingeben...">' +
+                '<button class="game-submit-btn" id="' + submitBtnId + '">✓ SENDEN</button>' +
                 '<div class="math-feedback" id="' + feedbackId + '"></div>';
 
             const display = $(displayId);
@@ -709,23 +720,34 @@
             });
 
             const answerEl = $(answerId);
+            const submitBtn = $(submitBtnId);
             answerEl.focus();
+
+            function submitAnswer() {
+                const guess = answerEl.value.trim().toUpperCase();
+                if (guess === word) {
+                    score++;
+                    $(feedbackId).textContent = '✓ Richtig!';
+                    $(feedbackId).className = 'math-feedback correct';
+                    onScore(score);
+                    setTimeout(nextWord, 500);
+                } else {
+                    $(feedbackId).textContent = '✗ ' + word;
+                    $(feedbackId).className = 'math-feedback wrong';
+                    setTimeout(nextWord, 800);
+                }
+            }
+
             answerEl.addEventListener('keydown', function handler(e) {
                 if (e.key === 'Enter') {
                     answerEl.removeEventListener('keydown', handler);
-                    const guess = answerEl.value.trim().toUpperCase();
-                    if (guess === word) {
-                        score++;
-                        $(feedbackId).textContent = '✓ Richtig!';
-                        $(feedbackId).className = 'math-feedback correct';
-                        onScore(score);
-                        setTimeout(nextWord, 500);
-                    } else {
-                        $(feedbackId).textContent = '✗ ' + word;
-                        $(feedbackId).className = 'math-feedback wrong';
-                        setTimeout(nextWord, 800);
-                    }
+                    submitAnswer();
                 }
+            });
+
+            submitBtn.addEventListener('click', () => {
+                answerEl.removeEventListener('keydown', answerEl._handler);
+                submitAnswer();
             });
         }
 
