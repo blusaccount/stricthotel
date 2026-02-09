@@ -14,7 +14,7 @@ import {
     removePlayerFromRoom,
     socketToRoom
 } from '../room-manager.js';
-import { emitBalanceUpdate } from '../socket-utils.js';
+import { emitBalanceUpdate, sanitizeName, validateRoomCode } from '../socket-utils.js';
 import { isDatabaseEnabled, query } from '../db.js';
 
 const brainDailyCooldown = new Map(); // name -> dayNumber
@@ -88,7 +88,7 @@ function scheduleBrainGameLeaderboardsBroadcast() {
 
 export function registerBrainVersusHandlers(socket, io, deps) {
     _io = io;
-    const { checkRateLimit, sanitizeName } = deps;
+    const { checkRateLimit } = deps;
 
     socket.on('brain-get-leaderboard', async () => { try {
         if (!checkRateLimit(socket)) return;
@@ -201,7 +201,7 @@ export function registerBrainVersusHandlers(socket, io, deps) {
     socket.on('brain-versus-join', (data) => { try {
         if (!checkRateLimit(socket)) return;
         if (!data || typeof data !== 'object') return;
-        const code = deps.validateRoomCode((data.code || '').toUpperCase());
+        const code = validateRoomCode((data.code || '').toUpperCase());
         const playerName = sanitizeName(data.playerName);
         if (!playerName) { socket.emit('error', { message: 'Name ungültig!' }); return; }
         if (code.length !== 4) { socket.emit('error', { message: 'Ungültiger Raum-Code!' }); return; }

@@ -346,6 +346,11 @@ export function registerLoopMachineHandlers(socket, io, { checkRateLimit, online
     } catch (err) { console.error('loop-clear error:', err.message); } });
 }
 
-export function cleanupLoopOnDisconnect(socketId) {
-    loopState.listeners.delete(socketId);
+export function cleanupLoopOnDisconnect(socketId, io) {
+    if (loopState.listeners.has(socketId)) {
+        loopState.listeners.delete(socketId);
+        io.to(LOOP_ROOM).emit('loop-listeners', {
+            listeners: Array.from(loopState.listeners.values())
+        });
+    }
 }

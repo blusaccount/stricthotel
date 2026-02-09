@@ -6,6 +6,10 @@ import { getBalance } from '../currency.js';
 const stockQuoteCache = new Map(); // symbol -> { quote, ts }
 const STOCK_QUOTE_CACHE_MS = 60 * 1000;
 
+let _stockGameEnabled = true;
+let _fetchTickerQuotes = null;
+let _getYahooFinance = null;
+
 function parseTradeAmount(rawAmount) {
     const amount = Number(rawAmount);
     if (!Number.isFinite(amount) || !Number.isInteger(amount) || amount <= 0) {
@@ -43,7 +47,12 @@ async function getQuoteForSymbol(symbol, quotes, _getYahooFinance) {
     return null;
 }
 
-export function registerStocksHandlers(socket, io, { checkRateLimit, checkStockTradeCooldown, onlinePlayers, _stockGameEnabled, _fetchTickerQuotes, _getYahooFinance }) {
+export function registerStocksHandlers(socket, io, deps) {
+    const { checkRateLimit, checkStockTradeCooldown, onlinePlayers, isStockGameEnabled, fetchTickerQuotes, getYahooFinance } = deps;
+    _stockGameEnabled = isStockGameEnabled;
+    _fetchTickerQuotes = fetchTickerQuotes;
+    _getYahooFinance = getYahooFinance;
+    
     socket.on('stock-buy', async (data) => { try {
         if (!checkRateLimit(socket)) return;
         if (!_stockGameEnabled) {

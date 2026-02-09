@@ -156,6 +156,11 @@ export function registerStrictClubHandlers(socket, io, { checkRateLimit, onlineP
     } catch (err) { console.error('club-skip error:', err.message); } });
 }
 
-export function cleanupClubOnDisconnect(socketId) {
-    clubState.listeners.delete(socketId);
+export function cleanupClubOnDisconnect(socketId, io) {
+    if (clubState.listeners.has(socketId)) {
+        clubState.listeners.delete(socketId);
+        io.to(CLUB_ROOM).emit('club-listeners', {
+            listeners: Array.from(clubState.listeners.values())
+        });
+    }
 }
