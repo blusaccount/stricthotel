@@ -696,6 +696,7 @@
         let score = 0;
         const usedWords = [];
         const area = $(areaId);
+        let submitted = false;
 
         function nextWord() {
             if (usedWords.length >= SCRAMBLE_WORDS.length) {
@@ -727,8 +728,7 @@
             const answerEl = $(answerId);
             const submitBtn = $(submitBtnId);
             answerEl.focus();
-
-            let submitted = false;
+            submitted = false;
 
             function submitAnswer() {
                 if (submitted) return;
