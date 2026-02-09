@@ -75,11 +75,12 @@
     const audioFiles = {
         ambience: new Audio('/games/strictly7s/audio/casino-ambiance.mp3'),
         smallWin: new Audio('/games/strictly7s/audio/slots-medium-win.mp3'),
-        // Medium and big wins use the same file (only 3 win sound files available)
-        mediumWin: new Audio('/games/strictly7s/audio/slots-big-win.mp3'),
+        // Medium and big wins share the same audio instance (only 3 win sound files available)
         bigWin: new Audio('/games/strictly7s/audio/slots-big-win.mp3'),
         jackpot: new Audio('/games/strictly7s/audio/slots-jackpot.mp3')
     };
+    // Reuse bigWin for mediumWin
+    audioFiles.mediumWin = audioFiles.bigWin;
 
     // Configure ambience
     audioFiles.ambience.loop = true;
@@ -87,7 +88,6 @@
 
     // Configure win sounds at half volume
     audioFiles.smallWin.volume = 0.5;
-    audioFiles.mediumWin.volume = 0.5;
     audioFiles.bigWin.volume = 0.5;
     audioFiles.jackpot.volume = 0.5;
 
@@ -319,7 +319,10 @@
 
     function playAudioFile(audio) {
         if (!audioEnabled) return;
-        audio.currentTime = 0;
+        // Reset playback position if audio is ready
+        if (audio.readyState >= 2) { // HAVE_CURRENT_DATA or greater
+            audio.currentTime = 0;
+        }
         audio.play().catch(err => console.log('Audio play failed:', err));
     }
 
