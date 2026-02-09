@@ -65,6 +65,7 @@
     var isSpinning = false;
     var audioEnabled = true;
     var audioCtx = null;
+    var pendingResultTimer = null;
 
     function setStatus(text, kind) {
         statusEl.textContent = text;
@@ -304,7 +305,8 @@
             return id || '---';
         });
 
-        setTimeout(function () {
+        pendingResultTimer = setTimeout(function () {
+            pendingResultTimer = null;
             stopSpinAnimation(finalReels);
             setTimeout(function () {
                 setSpinningState(false);
@@ -322,6 +324,12 @@
     });
 
     socket.on('strictly7s-error', function (data) {
+        // Clear pending result timer to avoid race condition
+        if (pendingResultTimer !== null) {
+            clearTimeout(pendingResultTimer);
+            pendingResultTimer = null;
+        }
+
         reels.forEach(function (reel) {
             if (reel.raf) {
                 cancelAnimationFrame(reel.raf);
