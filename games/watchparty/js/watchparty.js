@@ -167,7 +167,7 @@
                 return { 
                     name: p.name, 
                     character: p.character, 
-                    isHost: isHost && index === 0 // Mark ourselves as host if we're first player
+                    isHost: state.isHost && index === 0 // Mark ourselves as host if we're first player
                 };
             }));
         }
