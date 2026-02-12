@@ -159,9 +159,16 @@
         startKeepAlive();
 
         // Show player list from payload
+        // Note: game-started doesn't include socketId, so we determine host by:
+        // - If we are the host (state.isHost), mark the first player (ourselves) as host
+        // - room-update will refresh with accurate isHost flags from server
         if (data && data.players) {
-            renderPartyPlayers(data.players.map(function (p) {
-                return { name: p.name, character: p.character, isHost: false };
+            renderPartyPlayers(data.players.map(function (p, index) {
+                return { 
+                    name: p.name, 
+                    character: p.character, 
+                    isHost: state.isHost && index === 0 // Mark ourselves as host if we're first player
+                };
             }));
         }
 
@@ -243,6 +250,8 @@
         if (!data || !data.players) return;
         var wasHost = isHost;
         isHost = (data.hostId === state.mySocketId);
+        
+        // Server already includes isHost flag in player data
         renderPartyPlayers(data.players);
 
         // If we just became host, start sync interval
