@@ -362,8 +362,14 @@
     });
 
     // Victory particles animation
+    let victoryParticleTimeouts = [];
+
     function showVictoryParticles() {
-        // Remove existing
+        // Clear any pending timeouts from previous calls
+        victoryParticleTimeouts.forEach(id => clearTimeout(id));
+        victoryParticleTimeouts = [];
+
+        // Remove existing container
         const existing = document.querySelector('.victory-particles');
         if (existing) existing.remove();
 
@@ -374,7 +380,10 @@
         const particles = ['⭐', '🌟', '✨', '💫', '🎉', '🎊', '👑', '🏆'];
 
         for (let i = 0; i < 30; i++) {
-            setTimeout(() => {
+            const createId = setTimeout(() => {
+                // Check if container still exists (might have been removed)
+                if (!container.parentNode) return;
+
                 const particle = document.createElement('div');
                 particle.className = 'victory-particle';
                 particle.textContent = particles[Math.floor(Math.random() * particles.length)];
@@ -384,12 +393,20 @@
                 container.appendChild(particle);
 
                 // Remove after animation
-                setTimeout(() => particle.remove(), 4000);
+                const removeId = setTimeout(() => {
+                    if (particle.parentNode) particle.remove();
+                }, 4000);
+                victoryParticleTimeouts.push(removeId);
             }, i * 100);
+            victoryParticleTimeouts.push(createId);
         }
 
         // Remove container after all particles done
-        setTimeout(() => container.remove(), 6000);
+        const cleanupId = setTimeout(() => {
+            if (container.parentNode) container.remove();
+            victoryParticleTimeouts = [];
+        }, 6000);
+        victoryParticleTimeouts.push(cleanupId);
     }
 
     // --- Roll Button ---

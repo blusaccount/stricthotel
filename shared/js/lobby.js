@@ -5,6 +5,21 @@
 (function() {
     const { socket, $, showScreen, state } = window.MaexchenApp;
 
+    // Track registered socket listeners for cleanup
+    const socketListeners = [];
+
+    function registerSocketListener(event, handler) {
+        socket.on(event, handler);
+        socketListeners.push({ event, handler });
+    }
+
+    function cleanupSocketListeners() {
+        socketListeners.forEach(({ event, handler }) => {
+            socket.off(event, handler);
+        });
+        socketListeners.length = 0;
+    }
+
     function escapeHtml(str) {
         const div = document.createElement('div');
         div.textContent = str;
@@ -25,11 +40,20 @@
     socket.emit('get-lobbies', gameType);
 
     // Periodically refresh lobbies
-    setInterval(() => {
+    let lobbyRefreshInterval = setInterval(() => {
         if ($('screen-start')?.classList.contains('active')) {
             socket.emit('get-lobbies', gameType);
         }
     }, 5000);
+
+    // Cleanup all lobby resources
+    function cleanup() {
+        if (lobbyRefreshInterval) {
+            clearInterval(lobbyRefreshInterval);
+            lobbyRefreshInterval = null;
+        }
+        cleanupSocketListeners();
+    }
 
     // Event delegation for lobby card clicks (single listener instead of per-card)
     const lobbyList = $('lobby-list');
@@ -188,19 +212,19 @@
     });
 
     // --- Online Players Update ---
-    socket.on('online-players', (players) => {
+    registerSocketListener('online-players', (players) => {
         renderOnlinePlayers(players);
     });
 
     // --- Lobbies Update ---
-    socket.on('lobbies-update', ({ gameType: gt, lobbies }) => {
+    registerSocketListener('lobbies-update', ({ gameType: gt, lobbies }) => {
         if (gt === gameType) {
             renderLobbies(lobbies);
         }
     });
 
     // --- Room Created ---
-    socket.on('room-created', ({ code }) => {
+    registerSocketListener('room-created', ({ code }) => {
         state.roomCode = code;
         state.isHost = true;
         $('room-code-display').textContent = code;
@@ -215,7 +239,7 @@
     });
 
     // --- Room Joined ---
-    socket.on('room-joined', ({ code }) => {
+    registerSocketListener('room-joined', ({ code }) => {
         state.roomCode = code;
         state.isHost = false;
         $('room-code-display').textContent = code;
@@ -235,7 +259,7 @@
     });
 
     // --- Room Update ---
-    socket.on('room-update', ({ players, hostId }) => {
+    registerSocketListener('room-update', ({ players, hostId }) => {
         renderPlayerList(players);
         state.isHost = (hostId === state.mySocketId);
 
@@ -254,7 +278,7 @@
     });
 
     // --- Player Left ---
-    socket.on('player-left', ({ playerName }) => {
+    registerSocketListener('player-left', ({ playerName }) => {
         console.log(`${playerName} hat den Raum verlassen`);
     });
 
@@ -363,5 +387,10 @@
             });
         };
     }
+
+    // Public API
+    window.MaexchenLobby = {
+        cleanup
+    };
 
 })();

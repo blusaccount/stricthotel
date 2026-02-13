@@ -8,6 +8,28 @@ const STARTING_BALANCE = 1000;
 const balances = new Map(); // playerName -> number
 const diamonds = new Map(); // playerName -> number
 
+// Simple lock mechanism for in-memory operations to prevent race conditions
+const balanceLocks = new Map(); // playerName -> Promise
+
+async function withBalanceLock(playerName, fn) {
+    // Wait for any existing lock on this player
+    while (balanceLocks.has(playerName)) {
+        await balanceLocks.get(playerName);
+    }
+
+    // Create our lock
+    let resolve;
+    const lockPromise = new Promise(r => { resolve = r; });
+    balanceLocks.set(playerName, lockPromise);
+
+    try {
+        return await fn();
+    } finally {
+        balanceLocks.delete(playerName);
+        resolve();
+    }
+}
+
 function isValidAmount(amount) {
     return typeof amount === 'number' && Number.isFinite(amount) && amount > 0;
 }
@@ -95,11 +117,14 @@ export async function deductBalance(playerName, amount, reason = 'adjustment', m
     amount = normalizeMoney(amount);
 
     if (!isDatabaseEnabled()) {
-        const current = await getBalanceMemory(playerName);
-        if (amount > current) return null;
-        const newBalance = normalizeMoney(current - amount);
-        balances.set(playerName, newBalance);
-        return newBalance;
+        // Use lock to prevent race conditions in concurrent deductions
+        return withBalanceLock(playerName, async () => {
+            const current = await getBalanceMemory(playerName);
+            if (amount > current) return null;
+            const newBalance = normalizeMoney(current - amount);
+            balances.set(playerName, newBalance);
+            return newBalance;
+        });
     }
 
     // When no external client is provided, wrap in a transaction so

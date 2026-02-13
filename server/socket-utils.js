@@ -7,9 +7,9 @@ export function sanitizeName(name) {
 
 export function validateCharacter(character) {
     if (!character || typeof character !== 'object') return null;
-    // Limit character data size (~4KB JSON max, supports full 16x16 pixel grid + dataURL)
+    // Limit character data size (~10KB JSON max, supports full 16x16 pixel grid + 64px dataURL)
     const json = JSON.stringify(character);
-    if (json.length > 4096) return null;
+    if (json.length > 10240) return null;
     // Only allow expected keys
     const allowed = { pixels: true, dataURL: true };
     const clean = {};

@@ -29,6 +29,19 @@
 
     let onCompleteCallback = null;
 
+    // Shared AudioContext for all sound effects
+    let sharedAudioCtx = null;
+
+    function getAudioContext() {
+        if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
+            sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (sharedAudioCtx.state === 'suspended') {
+            sharedAudioCtx.resume();
+        }
+        return sharedAudioCtx;
+    }
+
     function createEmptyGrid() {
         return Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(null));
     }
@@ -378,10 +391,10 @@
         return renderToDataURL(96);
     }
 
-    // Sound effects
+    // Sound effects (using shared AudioContext)
     function playSelectSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = getAudioContext();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = 'square';
@@ -397,20 +410,19 @@
 
     function playConfirmSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const ctx = getAudioContext();
             [523, 659, 784].forEach((freq, i) => {
-                setTimeout(() => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'square';
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.15);
-                }, i * 80);
+                const startTime = ctx.currentTime + (i * 0.08);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.08, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + 0.15);
             });
         } catch (e) {}
     }

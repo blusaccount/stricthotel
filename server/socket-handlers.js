@@ -76,6 +76,14 @@ export function cleanupRateLimiters() {
     for (const [ip, entry] of rateLimitersIp) {
         if (now > entry.resetTime) rateLimitersIp.delete(ip);
     }
+    // Clean up stale cooldown entries (older than 1 minute)
+    const cooldownStaleThreshold = now - 60000;
+    for (const [id, timestamp] of stockTradeCooldown) {
+        if (timestamp < cooldownStaleThreshold) stockTradeCooldown.delete(id);
+    }
+    for (const [id, timestamp] of strictly7sSpinCooldown) {
+        if (timestamp < cooldownStaleThreshold) strictly7sSpinCooldown.delete(id);
+    }
     cleanupStockQuoteCache();
 }
 

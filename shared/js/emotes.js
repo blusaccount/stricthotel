@@ -99,11 +99,22 @@
         }
     }
 
+    // Maximum number of visible emote popups to prevent DOM bloat
+    const MAX_EMOTE_POPUPS = 5;
+
     // Show emote popup in corner (less intrusive)
     function showEmotePopup(playerName, emote) {
-        // Stack multiple emotes
+        // Stack multiple emotes, with a cap
         const existingPopups = document.querySelectorAll('.emote-popup');
-        const offset = existingPopups.length * 80;
+
+        // Remove oldest popups if we're at the limit
+        if (existingPopups.length >= MAX_EMOTE_POPUPS) {
+            const oldestPopups = Array.from(existingPopups).slice(0, existingPopups.length - MAX_EMOTE_POPUPS + 1);
+            oldestPopups.forEach(popup => popup.remove());
+        }
+
+        const currentPopups = document.querySelectorAll('.emote-popup');
+        const offset = currentPopups.length * 80;
 
         const popup = document.createElement('div');
         popup.className = 'emote-popup';

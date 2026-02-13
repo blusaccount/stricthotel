@@ -59,7 +59,8 @@ describe('validateCharacter', () => {
     });
 
     it('rejects oversized character data', () => {
-        const huge = { pixels: 'x'.repeat(5000) };
+        // Character limit is 10KB (10240 bytes)
+        const huge = { pixels: 'x'.repeat(11000) };
         expect(validateCharacter(huge)).toBeNull();
     });
 

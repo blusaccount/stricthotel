@@ -118,7 +118,8 @@
 
     // Start random transmission messages in chat
     function startTransmissions() {
-        if (transmissionInterval) return;
+        // Always clear any existing interval first to prevent stacking
+        stopTransmissions();
 
         transmissionInterval = setInterval(() => {
             // 10% chance every 30 seconds
@@ -134,6 +135,11 @@
             clearInterval(transmissionInterval);
             transmissionInterval = null;
         }
+    }
+
+    // Check if transmissions are running
+    function isTransmitting() {
+        return transmissionInterval !== null;
     }
 
     // Screen shake effect
