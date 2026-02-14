@@ -170,7 +170,16 @@ export async function removePlayerFromRoom(io, socketId, room) {
 
     // Clean up bet for leaving player and reset requiredBet if no bets remain
     if (room.bets) {
+        const leavingBet = room.bets[socketId] || 0;
         delete room.bets[socketId];
+
+        // Refund pre-deducted bet if game hasn't started
+        if (leavingBet > 0 && !room.game) {
+            addBalance(playerName, leavingBet, 'maexchen_bet_refund', { roomCode: room.code }).catch(err => {
+                console.error('bet refund error:', err.message);
+            });
+        }
+
         const anyBets = room.players.some(p => (room.bets[p.socketId] || 0) > 0);
         if (!anyBets) {
             room.requiredBet = 0;

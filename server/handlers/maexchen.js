@@ -4,7 +4,7 @@ import {
     getAlivePlayers, nextAlivePlayerIndex
 } from '../game-logic.js';
 import { getRoom, sendTurnStart, awardPotAndEndGame } from '../room-manager.js';
-import { getBalance, deductBalance } from '../currency.js';
+import { getBalance, deductBalance, addBalance } from '../currency.js';
 import { emitBalanceUpdate } from '../socket-utils.js';
 
 export function registerMaexchenHandlers(socket, io, deps) {
@@ -27,6 +27,9 @@ export function registerMaexchenHandlers(socket, io, deps) {
         // Initialize bets map if needed
         if (!room.bets) room.bets = {};
 
+        const oldBet = room.bets[socket.id] || 0;
+        if (amount === oldBet) return; // No change
+
         // Enforce uniform bet: first non-zero bet sets the required amount
         if (amount > 0) {
             if (room.requiredBet === undefined || room.requiredBet === 0) {
@@ -37,10 +40,26 @@ export function registerMaexchenHandlers(socket, io, deps) {
             }
         }
 
-        const balance = await getBalance(player.name);
-        if (amount > balance) {
-            socket.emit('error', { message: 'Nicht genug Coins!' });
-            return;
+        // Refund old bet first, then deduct new amount atomically
+        if (oldBet > 0) {
+            await addBalance(player.name, oldBet, 'maexchen_bet_refund', { roomCode: room.code });
+        }
+
+        if (amount > 0) {
+            const newBalance = await deductBalance(player.name, amount, 'maexchen_bet', { roomCode: room.code });
+            if (newBalance === null) {
+                // Can't afford — re-deduct old bet if it was refunded
+                if (oldBet > 0) {
+                    await deductBalance(player.name, oldBet, 'maexchen_bet', { roomCode: room.code });
+                }
+                socket.emit('error', { message: 'Nicht genug Coins!' });
+                return;
+            }
+            emitBalanceUpdate(io, socket.id, newBalance);
+        } else if (oldBet > 0) {
+            // Bet removed — balance was already refunded above
+            const balance = await getBalance(player.name);
+            emitBalanceUpdate(io, socket.id, balance);
         }
 
         room.bets[socket.id] = amount;
@@ -78,22 +97,11 @@ export function registerMaexchenHandlers(socket, io, deps) {
             return;
         }
 
-        // Deduct bets from player balances for Mäxchen
+        // Bets are already deducted at place-bet time — just sum the pot
         let pot = 0;
-        const betBalances = new Map();
         if (room.gameType === 'maexchen' && room.bets) {
             for (const p of room.players) {
-                const bet = room.bets[p.socketId] || 0;
-                if (bet > 0) {
-                    const result = await deductBalance(p.name, bet, 'maexchen_bet', { roomCode: room.code });
-                    if (result === null) {
-                        // Player can no longer afford their bet, reset to 0
-                        room.bets[p.socketId] = 0;
-                    } else {
-                        pot += bet;
-                        betBalances.set(p.socketId, result);
-                    }
-                }
+                pot += room.bets[p.socketId] || 0;
             }
         }
 
@@ -116,14 +124,6 @@ export function registerMaexchenHandlers(socket, io, deps) {
             players: room.game.players.map(p => ({ name: p.name, lives: p.lives, character: p.character })),
             pot: room.game.pot
         });
-
-        // Send updated balances to all players after bet deduction
-        if (pot > 0) {
-            for (const p of room.players) {
-                const balance = betBalances.get(p.socketId);
-                emitBalanceUpdate(io, p.socketId, balance);
-            }
-        }
 
         sendTurnStart(io, room);
         broadcastLobbies(io, room.gameType);

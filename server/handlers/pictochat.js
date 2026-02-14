@@ -106,6 +106,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Cursor ---
     socket.on('picto-cursor', (data) => { try {
         if (!checkRateLimit(socket, 40)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (!data || typeof data !== 'object') return;
         const point = normalizePoint({ x: data.x, y: data.y });
         if (!point) return;
@@ -119,6 +120,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
 
     socket.on('picto-cursor-hide', () => { try {
         if (!checkRateLimit(socket, 20)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         socket.to(PICTO_ROOM).emit('picto-cursor-hide', {
             id: socket.id
         });
@@ -127,6 +129,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Stroke Segment ---
     socket.on('picto-stroke-segment', (data) => { try {
         if (!checkRateLimit(socket, 30)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (!data || typeof data !== 'object') return;
 
         const tool = data.tool === 'eraser' ? 'eraser' : 'pen';
@@ -152,6 +155,8 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
                 points: []
             };
             pictoState.inProgress.set(strokeId, stroke);
+        } else if (stroke.authorId !== socket.id) {
+            return;
         }
 
         if (stroke.points.length + points.length > PICTO_MAX_POINTS) return;
@@ -169,6 +174,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Stroke End ---
     socket.on('picto-stroke-end', async (data) => { try {
         if (!checkRateLimit(socket, 10)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (!data || typeof data !== 'object') return;
 
         const strokeId = typeof data.strokeId === 'string' ? data.strokeId : '';
@@ -197,6 +203,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Shape ---
     socket.on('picto-shape', async (data) => { try {
         if (!checkRateLimit(socket, 8)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (!data || typeof data !== 'object') return;
 
         const tool = ['line', 'rect', 'circle'].includes(data.tool) ? data.tool : null;
@@ -231,6 +238,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Undo ---
     socket.on('picto-undo', async (data) => { try {
         if (!checkRateLimit(socket, 5)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (!data || typeof data !== 'object') return;
 
         const strokeId = typeof data.strokeId === 'string' ? data.strokeId : '';
@@ -252,6 +260,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Redo ---
     socket.on('picto-redo', async () => { try {
         if (!checkRateLimit(socket, 5)) return;
+        if (!onlinePlayers.has(socket.id)) return;
 
         const redo = getRedoStack(socket.id);
         if (!redo.length) return;
@@ -271,6 +280,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Clear ---
     socket.on('picto-clear', async () => { try {
         if (!checkRateLimit(socket, 2)) return;
+        if (!onlinePlayers.has(socket.id)) return;
 
         pictoState.strokes = [];
         getRedoStack(socket.id).length = 0;
@@ -286,6 +296,7 @@ export function registerPictochatHandlers(socket, io, { checkRateLimit, onlinePl
     // --- Pictochat Message ---
     socket.on('picto-message', async (text) => { try {
         if (!checkRateLimit(socket, 6)) return;
+        if (!onlinePlayers.has(socket.id)) return;
         if (typeof text !== 'string') return;
         const message = text.replace(/[<>&"'`]/g, '').slice(0, 200).trim();
         if (!message) return;
