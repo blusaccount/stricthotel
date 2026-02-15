@@ -111,3 +111,20 @@ create index if not exists lol_bets_player_name_idx
 
 create index if not exists wallet_ledger_player_created_idx
   on wallet_ledger (player_id, created_at desc);
+
+-- tierlist placements for Thing of the Week
+create table if not exists tierlist_placements (
+  id bigserial primary key,
+  player_name text not null,
+  week_key text not null,
+  item_index smallint not null,
+  tier text not null,
+  placed_at timestamptz not null default now(),
+  unique (player_name, week_key, item_index)
+);
+
+create index if not exists tierlist_placements_week_idx
+  on tierlist_placements (week_key);
+
+create index if not exists tierlist_placements_player_week_idx
+  on tierlist_placements (player_name, week_key);

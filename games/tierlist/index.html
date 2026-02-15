@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StrictHotel – Thing of the Week</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👽</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/shared/css/theme.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ds-bg: #1a1a1a;
+            --ds-surface: #111111;
+            --ds-border: #cccccc;
+            --ds-text: #e8e8e8;
+            --ds-text-dim: #888888;
+            --ds-highlight: #333333;
+            --ds-gold: #ffd700;
+            --ds-accent: #00ff00;
+            --ds-radius: 0px;
+            --tier-s: #ffd700;
+            --tier-a: #ff6b6b;
+            --tier-b: #ff9f43;
+            --tier-c: #feca57;
+            --tier-d: #54a0ff;
+            --tier-f: #576574;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            background: var(--ds-bg);
+            color: var(--ds-text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            image-rendering: pixelated;
+            line-height: 1.8;
+        }
+
+        .tierlist-page {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 16px 12px 60px;
+        }
+
+        /* ===== HEADER ===== */
+        .tierlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ds-border);
+        }
+
+        .back-link {
+            color: var(--ds-text-dim);
+            text-decoration: none;
+            font-size: 9px;
+            transition: color 0.15s;
+        }
+        .back-link:hover { color: var(--ds-gold); }
+
+        .tierlist-title {
+            font-size: 14px;
+            color: var(--ds-gold);
+            text-shadow: 2px 2px 0 #000;
+            letter-spacing: 1px;
+        }
+
+        .week-info {
+            text-align: right;
+            font-size: 8px;
+            color: var(--ds-text-dim);
+        }
+        .week-info .countdown {
+            color: var(--ds-accent);
+        }
+
+        /* ===== STATS BAR ===== */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+            font-size: 8px;
+            color: var(--ds-text-dim);
+        }
+
+        .stats-bar .ranker-count {
+            color: var(--ds-gold);
+        }
+
+        /* ===== VIEW TOGGLE ===== */
+        .view-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+        }
+        .view-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: 2px solid var(--ds-border);
+            background: var(--ds-surface);
+            color: var(--ds-text-dim);
+            font-family: inherit;
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .view-btn:first-child { border-right: none; }
+        .view-btn.active {
+            background: var(--ds-gold);
+            color: #000;
+            border-color: var(--ds-gold);
+        }
+        .view-btn:hover:not(.active) {
+            background: var(--ds-highlight);
+            color: var(--ds-text);
+        }
+
+        /* ===== TIER ROWS ===== */
+        .tier-row {
+            display: flex;
+            align-items: stretch;
+            margin-bottom: 4px;
+            min-height: 76px;
+            border: 2px solid var(--ds-border);
+        }
+
+        .tier-label {
+            width: 56px;
+            min-width: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
+            user-select: none;
+        }
+
+        .tier-label-S { background: var(--tier-s); }
+        .tier-label-A { background: var(--tier-a); }
+        .tier-label-B { background: var(--tier-b); }
+        .tier-label-C { background: var(--tier-c); }
+        .tier-label-D { background: var(--tier-d); }
+        .tier-label-F { background: var(--tier-f); color: #fff; }
+
+        .tier-items {
+            flex: 1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            align-content: flex-start;
+            gap: 4px;
+            padding: 4px;
+            background: var(--ds-surface);
+            min-height: 72px;
+            transition: background 0.15s;
+        }
+
+        .tier-items.drag-over {
+            background: rgba(255, 215, 0, 0.1);
+            outline: 2px dashed var(--ds-gold);
+            outline-offset: -2px;
+        }
+
+        /* ===== UNRANKED POOL ===== */
+        .unranked-section {
+            margin-top: 16px;
+            border: 2px solid var(--ds-border);
+        }
+
+        .unranked-label {
+            padding: 8px 12px;
+            background: var(--ds-highlight);
+            font-size: 9px;
+            color: var(--ds-text-dim);
+            border-bottom: 1px solid var(--ds-border);
+        }
+
+        .unranked-pool {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 8px;
+            background: var(--ds-surface);
+            min-height: 80px;
+            transition: background 0.15s;
+        }
+
+        .unranked-pool.drag-over {
+            background: rgba(255, 255, 255, 0.05);
+            outline: 2px dashed var(--ds-text-dim);
+            outline-offset: -2px;
+        }
+
+        /* ===== ITEM CARDS ===== */
+        .item-card {
+            width: 68px;
+            height: 80px;
+            background: var(--ds-bg);
+            border: 2px solid var(--ds-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: grab;
+            transition: transform 0.1s, opacity 0.15s, box-shadow 0.1s;
+            user-select: none;
+            touch-action: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .item-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+            z-index: 1;
+        }
+
+        .item-card:active { cursor: grabbing; }
+
+        .item-card.dragging {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .item-card img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            image-rendering: auto;
+            pointer-events: none;
+        }
+
+        .item-card .item-fallback {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            background: var(--ds-highlight);
+            color: var(--ds-gold);
+        }
+
+        .item-card .item-name {
+            font-size: 6px;
+            color: var(--ds-text-dim);
+            text-align: center;
+            line-height: 1.2;
+            max-width: 64px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            padding: 0 2px;
+        }
+
+        /* ===== DRAG GHOST (touch) ===== */
+        .drag-ghost {
+            position: fixed;
+            z-index: 99999;
+            pointer-events: none;
+            opacity: 0.9;
+            transform: scale(1.15);
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+        }
+
+        /* ===== COMMUNITY VIEW ===== */
+        .community-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .community-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+        }
+
+        .community-item-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            image-rendering: auto;
+            flex-shrink: 0;
+        }
+
+        .community-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .community-item-name {
+            font-size: 8px;
+            color: var(--ds-text);
+            margin-bottom: 4px;
+        }
+
+        .community-bar {
+            height: 14px;
+            display: flex;
+            border-radius: 0;
+            overflow: hidden;
+            border: 1px solid var(--ds-border);
+        }
+
+        .bar-segment {
+            height: 100%;
+            min-width: 1px;
+            transition: width 0.3s ease;
+        }
+
+        .community-item-meta {
+            font-size: 7px;
+            color: var(--ds-text-dim);
+            margin-top: 2px;
+        }
+
+        .community-avg-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 9px;
+            font-weight: bold;
+            color: #000;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .avg-S { background: var(--tier-s); }
+        .avg-A { background: var(--tier-a); }
+        .avg-B { background: var(--tier-b); }
+        .avg-C { background: var(--tier-c); }
+        .avg-D { background: var(--tier-d); }
+        .avg-F { background: var(--tier-f); color: #fff; }
+
+        /* ===== LISTENERS ===== */
+        .listeners-section {
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ds-border);
+        }
+
+        .listeners-title {
+            font-size: 9px;
+            color: var(--ds-text-dim);
+            margin-bottom: 8px;
+        }
+
+        .listeners-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 8px;
+            color: var(--ds-accent);
+        }
+
+        .listener-tag {
+            padding: 3px 8px;
+            background: var(--ds-surface);
+            border: 1px solid var(--ds-border);
+        }
+
+        /* ===== NO ITEMS MESSAGE ===== */
+        .empty-msg {
+            text-align: center;
+            padding: 30px 16px;
+            color: var(--ds-text-dim);
+            font-size: 9px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .tierlist-page { padding: 10px 6px 40px; }
+            .tierlist-title { font-size: 11px; }
+            .tier-label { width: 36px; min-width: 36px; font-size: 14px; }
+            .item-card { width: 56px; height: 68px; }
+            .item-card img, .item-card .item-fallback { width: 38px; height: 38px; }
+            .item-card .item-name { font-size: 5px; }
+            .view-btn { font-size: 8px; padding: 8px 4px; }
+            .community-item-img { width: 32px; height: 32px; }
+        }
+
+        @media (max-width: 400px) {
+            .tierlist-header { flex-direction: column; align-items: flex-start; }
+            .week-info { text-align: left; }
+            .item-card { width: 48px; height: 60px; }
+            .item-card img, .item-card .item-fallback { width: 32px; height: 32px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="tierlist-page">
+
+    <!-- HEADER -->
+    <div class="tierlist-header">
+        <a href="/" class="back-link">&lt; BACK TO LOBBY</a>
+        <div class="tierlist-title">THING OF THE WEEK</div>
+        <div class="week-info">
+            <div id="week-label">Loading...</div>
+            <div class="countdown" id="week-countdown"></div>
+        </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+        <span><span class="ranker-count" id="ranker-count">0</span> people ranked</span>
+        <span><span id="listener-count">0</span> online now</span>
+    </div>
+
+    <!-- VIEW TOGGLE -->
+    <div class="view-toggle">
+        <button class="view-btn active" data-view="my" id="btn-my-view">MY RANKING</button>
+        <button class="view-btn" data-view="community" id="btn-community-view">COMMUNITY</button>
+    </div>
+
+    <!-- MY RANKING VIEW -->
+    <div id="my-ranking-view">
+        <div class="tier-row">
+            <div class="tier-label tier-label-S">S</div>
+            <div class="tier-items" data-tier="S"></div>
+        </div>
+        <div class="tier-row">
+            <div class="tier-label tier-label-A">A</div>
+            <div class="tier-items" data-tier="A"></div>
+        </div>
+        <div class="tier-row">
+            <div class="tier-label tier-label-B">B</div>
+            <div class="tier-items" data-tier="B"></div>
+        </div>
+        <div class="tier-row">
+            <div class="tier-label tier-label-C">C</div>
+            <div class="tier-items" data-tier="C"></div>
+        </div>
+        <div class="tier-row">
+            <div class="tier-label tier-label-D">D</div>
+            <div class="tier-items" data-tier="D"></div>
+        </div>
+        <div class="tier-row">
+            <div class="tier-label tier-label-F">F</div>
+            <div class="tier-items" data-tier="F"></div>
+        </div>
+
+        <!-- UNRANKED POOL -->
+        <div class="unranked-section">
+            <div class="unranked-label">UNRANKED — drag items to a tier</div>
+            <div class="unranked-pool" id="unranked-pool"></div>
+        </div>
+    </div>
+
+    <!-- COMMUNITY VIEW -->
+    <div id="community-view" style="display:none">
+        <div class="community-list" id="community-list">
+            <div class="empty-msg">No rankings yet this week</div>
+        </div>
+    </div>
+
+    <!-- LISTENERS -->
+    <div class="listeners-section">
+        <div class="listeners-title">ONLINE (<span id="listener-count-2">0</span>)</div>
+        <div class="listeners-list" id="listeners-list"></div>
+    </div>
+
+</div>
+
+<!-- Socket.io -->
+<script src="/socket.io/socket.io.js"></script>
+
+<!-- Socket initialization helpers -->
+<script src="/shared/js/socket-init.js"></script>
+
+<!-- Items Catalog & Weekly Selection -->
+<script src="js/items.js"></script>
+
+<!-- Game Logic -->
+<script src="js/game.js"></script>
+
+</body>
+</html>

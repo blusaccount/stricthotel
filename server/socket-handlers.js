@@ -17,6 +17,7 @@ import { registerStrictClubHandlers, cleanupClubOnDisconnect } from './handlers/
 import { registerLoopMachineHandlers, cleanupLoopOnDisconnect } from './handlers/loop-machine.js';
 import { registerStrictly7sHandlers } from './handlers/strictly7s.js';
 import { registerWatchpartyHandlers } from './handlers/watchparty.js';
+import { registerTierlistHandlers, cleanupTierlistOnDisconnect } from './handlers/tierlist.js';
 
 // ============== RATE LIMITING ==============
 
@@ -117,6 +118,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
         registerLoopMachineHandlers(socket, io, deps);
         registerStrictly7sHandlers(socket, io, deps);
         registerWatchpartyHandlers(socket, io, deps);
+        registerTierlistHandlers(socket, io, deps);
 
         socket.on('disconnect', async () => { try {
             rateLimiters.delete(socket.id);
@@ -126,6 +128,7 @@ export function registerSocketHandlers(io, { fetchTickerQuotes, getYahooFinance,
             cleanupPictochatOnDisconnect(socket.id, io);
             cleanupClubOnDisconnect(socket.id, io);
             cleanupLoopOnDisconnect(socket.id, io);
+            cleanupTierlistOnDisconnect(socket.id, io);
 
             onlinePlayers.delete(socket.id);
             broadcastOnlinePlayers(io);
