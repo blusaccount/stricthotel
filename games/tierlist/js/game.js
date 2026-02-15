@@ -70,6 +70,7 @@
         img.src = item.image;
         img.alt = item.name;
         img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
         img.onerror = function () {
             // Replace with fallback
             var fb = document.createElement('div');
@@ -139,7 +140,7 @@
             if (!data || data.total === 0) {
                 // Show unranked items at the bottom
                 html += '<div class="community-item" data-community-idx="' + item.index + '">';
-                html += '<img class="community-item-img" src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" onerror="this.style.display=\'none\'">';
+                html += '<img class="community-item-img" src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">';
                 html += '<div class="community-item-info">';
                 html += '<div class="community-item-name">' + escapeHtml(item.name) + '</div>';
                 html += '<div class="community-item-meta">No votes yet</div>';
@@ -150,7 +151,7 @@
 
             hasAnyData = true;
             html += '<div class="community-item" data-community-idx="' + item.index + '">';
-            html += '<img class="community-item-img" src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" onerror="this.style.display=\'none\'">';
+            html += '<img class="community-item-img" src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.name) + '" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\'">';
             html += '<div class="community-item-info">';
             html += '<div class="community-item-name">' + escapeHtml(item.name) + '</div>';
             html += renderCommunityBar(data);

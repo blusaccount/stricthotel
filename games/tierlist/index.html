@@ -30,7 +30,7 @@
 
         body {
             font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
+            font-size: 12px;
             background: var(--ds-bg);
             color: var(--ds-text);
             min-height: 100vh;
@@ -42,7 +42,7 @@
         }
 
         .tierlist-page {
-            max-width: 900px;
+            max-width: 1000px;
             width: 100%;
             margin: 0 auto;
             padding: 16px 12px 60px;
@@ -63,13 +63,13 @@
         .back-link {
             color: var(--ds-text-dim);
             text-decoration: none;
-            font-size: 9px;
+            font-size: 10px;
             transition: color 0.15s;
         }
         .back-link:hover { color: var(--ds-gold); }
 
         .tierlist-title {
-            font-size: 14px;
+            font-size: 18px;
             color: var(--ds-gold);
             text-shadow: 2px 2px 0 #000;
             letter-spacing: 1px;
@@ -77,7 +77,7 @@
 
         .week-info {
             text-align: right;
-            font-size: 8px;
+            font-size: 10px;
             color: var(--ds-text-dim);
         }
         .week-info .countdown {
@@ -93,7 +93,7 @@
             padding: 8px 12px;
             background: var(--ds-surface);
             border: 1px solid var(--ds-border);
-            font-size: 8px;
+            font-size: 10px;
             color: var(--ds-text-dim);
         }
 
@@ -114,7 +114,7 @@
             background: var(--ds-surface);
             color: var(--ds-text-dim);
             font-family: inherit;
-            font-size: 9px;
+            font-size: 11px;
             cursor: pointer;
             transition: all 0.15s;
         }
@@ -134,17 +134,17 @@
             display: flex;
             align-items: stretch;
             margin-bottom: 4px;
-            min-height: 76px;
+            min-height: 116px;
             border: 2px solid var(--ds-border);
         }
 
         .tier-label {
-            width: 56px;
-            min-width: 56px;
+            width: 64px;
+            min-width: 64px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             color: #000;
             text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
@@ -167,7 +167,7 @@
             gap: 4px;
             padding: 4px;
             background: var(--ds-surface);
-            min-height: 72px;
+            min-height: 110px;
             transition: background 0.15s;
         }
 
@@ -186,7 +186,7 @@
         .unranked-label {
             padding: 8px 12px;
             background: var(--ds-highlight);
-            font-size: 9px;
+            font-size: 10px;
             color: var(--ds-text-dim);
             border-bottom: 1px solid var(--ds-border);
         }
@@ -209,8 +209,8 @@
 
         /* ===== ITEM CARDS ===== */
         .item-card {
-            width: 68px;
-            height: 80px;
+            width: 100px;
+            height: 110px;
             background: var(--ds-bg);
             border: 2px solid var(--ds-border);
             display: flex;
@@ -240,30 +240,30 @@
         }
 
         .item-card img {
-            width: 48px;
-            height: 48px;
+            width: 72px;
+            height: 72px;
             object-fit: cover;
             image-rendering: auto;
             pointer-events: none;
         }
 
         .item-card .item-fallback {
-            width: 48px;
-            height: 48px;
+            width: 72px;
+            height: 72px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 28px;
             background: var(--ds-highlight);
             color: var(--ds-gold);
         }
 
         .item-card .item-name {
-            font-size: 6px;
+            font-size: 9px;
             color: var(--ds-text-dim);
             text-align: center;
             line-height: 1.2;
-            max-width: 64px;
+            max-width: 96px;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -297,8 +297,8 @@
         }
 
         .community-item-img {
-            width: 40px;
-            height: 40px;
+            width: 56px;
+            height: 56px;
             object-fit: cover;
             image-rendering: auto;
             flex-shrink: 0;
@@ -310,7 +310,7 @@
         }
 
         .community-item-name {
-            font-size: 8px;
+            font-size: 10px;
             color: var(--ds-text);
             margin-bottom: 4px;
         }
@@ -330,7 +330,7 @@
         }
 
         .community-item-meta {
-            font-size: 7px;
+            font-size: 9px;
             color: var(--ds-text-dim);
             margin-top: 2px;
         }
@@ -338,7 +338,7 @@
         .community-avg-badge {
             display: inline-block;
             padding: 2px 6px;
-            font-size: 9px;
+            font-size: 11px;
             font-weight: bold;
             color: #000;
             margin-left: 8px;
@@ -360,7 +360,7 @@
         }
 
         .listeners-title {
-            font-size: 9px;
+            font-size: 10px;
             color: var(--ds-text-dim);
             margin-bottom: 8px;
         }
@@ -369,7 +369,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            font-size: 8px;
+            font-size: 10px;
             color: var(--ds-accent);
         }
 
@@ -384,26 +384,26 @@
             text-align: center;
             padding: 30px 16px;
             color: var(--ds-text-dim);
-            font-size: 9px;
+            font-size: 10px;
         }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 600px) {
             .tierlist-page { padding: 10px 6px 40px; }
-            .tierlist-title { font-size: 11px; }
-            .tier-label { width: 36px; min-width: 36px; font-size: 14px; }
-            .item-card { width: 56px; height: 68px; }
-            .item-card img, .item-card .item-fallback { width: 38px; height: 38px; }
-            .item-card .item-name { font-size: 5px; }
-            .view-btn { font-size: 8px; padding: 8px 4px; }
-            .community-item-img { width: 32px; height: 32px; }
+            .tierlist-title { font-size: 14px; }
+            .tier-label { width: 48px; min-width: 48px; font-size: 18px; }
+            .item-card { width: 80px; height: 92px; }
+            .item-card img, .item-card .item-fallback { width: 56px; height: 56px; }
+            .item-card .item-name { font-size: 7px; }
+            .view-btn { font-size: 9px; padding: 8px 4px; }
+            .community-item-img { width: 44px; height: 44px; }
         }
 
         @media (max-width: 400px) {
             .tierlist-header { flex-direction: column; align-items: flex-start; }
             .week-info { text-align: left; }
-            .item-card { width: 48px; height: 60px; }
-            .item-card img, .item-card .item-fallback { width: 32px; height: 32px; }
+            .item-card { width: 68px; height: 80px; }
+            .item-card img, .item-card .item-fallback { width: 48px; height: 48px; }
         }
     </style>
 </head>
