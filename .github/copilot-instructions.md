@@ -2,7 +2,7 @@
 
 ## Project overview
 
-StrictHotel is a multiplayer minigame collection powered by Node.js, Express, and Socket.IO with a vanilla JavaScript frontend. Games include Mäxchen (dice bluffing), Watchparty, StrictBrain, a Turkish quiz, and a stock trading simulator. Data is persisted in PostgreSQL (Neon).
+StrictHotel is a multiplayer minigame collection powered by Node.js, Express, and Socket.IO with a vanilla JavaScript frontend. It features 13 games/experiences including Mäxchen (dice bluffing), Watch Party, Stock Market, Strictly7s (slots), Loop Machine (step sequencer), LoL Betting, Strict Brain, Türkçe (Turkish quiz), Strict Club, and more. Data is persisted in PostgreSQL with in-memory fallback for local dev.
 
 ## Tech stack
 
@@ -33,11 +33,15 @@ There is no build step; the project serves vanilla JS directly.
 ## Architecture guidelines
 
 - Socket events are the source of truth for multiplayer state.
+- Each game/feature has its own handler in `server/handlers/` (e.g., `maexchen.js`, `stocks.js`, `loop-machine.js`).
 - In-memory room state lives in `server/room-manager.js`.
-- DB operations use `async`/`await` with a local fallback when `DATABASE_URL` is unset.
-- Shared client modules are in `shared/js/`; shared styles in `shared/css/theme.css`.
-- Game-specific code is in `games/<game-name>/`.
-- Server-side logic is in `server/`.
+- DB operations use `async`/`await` with in-memory fallback when `DATABASE_URL` is unset.
+- Express routes in `server/routes/` (auth, stocks, turkish, nostalgiabait).
+- Database modules: `currency-store.js`, `stock-game.js`, `character-store.js`, etc.
+- Shared client modules in `shared/js/`; shared styles in `shared/css/theme.css`.
+- Game frontends in `games/<game-name>/` (9 games total).
+- Public pages in `public/` (landing, login, contacts, shop).
+- See `docs/EVENTS.md` for complete socket event catalog.
 
 ## Testing
 
@@ -55,5 +59,8 @@ There is no build step; the project serves vanilla JS directly.
 ## Workflow
 
 - Read `HANDOFF.md` before starting work to understand recent changes and open risks.
+- Check `docs/EVENTS.md` for socket event contracts.
+- Read `LLM_AGENT_GUIDE.md` for detailed repo structure and common pitfalls.
+- Run `npm test` before committing (207+ tests should pass).
 - Record what you changed, why, and how to verify it in `HANDOFF.md` when done.
 - For large or risky changes, create an execution plan in `PLANS.md`.
