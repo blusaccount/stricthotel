@@ -378,10 +378,14 @@ export async function getLeaderboardSnapshot(currentPrices, fetchMissingPrice) {
 /**
  * Rank players by open trade performance (unrealized PnL %) for currently held positions.
  * Keeps the main leaderboard independent (portfolio value still primary there).
+ * Accepts an optional pre-computed leaderboard snapshot to avoid redundant API/DB calls.
+ * @param {Array} currentPrices
+ * @param {Function} fetchMissingPrice
+ * @param {Array} [existingSnapshot] - pre-computed result from getLeaderboardSnapshot
  * @returns {Promise<Array<{ name:string, investedCapital:number, portfolioValue:number, openPnl:number, performancePct:number }>>}
  */
-export async function getTradePerformanceLeaderboard(currentPrices, fetchMissingPrice) {
-    const portfolioLeaderboard = await getLeaderboardSnapshot(currentPrices, fetchMissingPrice);
+export async function getTradePerformanceLeaderboard(currentPrices, fetchMissingPrice, existingSnapshot) {
+    const portfolioLeaderboard = existingSnapshot || await getLeaderboardSnapshot(currentPrices, fetchMissingPrice);
     const performance = [];
 
     for (const player of portfolioLeaderboard) {

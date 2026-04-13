@@ -213,7 +213,7 @@ export function registerStocksHandlers(socket, io, deps) {
         }
         socket.emit('stock-leaderboard', leaderboard);
 
-        const performanceLeaderboard = await getTradePerformanceLeaderboard(quotes, fetchMissingPrice);
+        const performanceLeaderboard = await getTradePerformanceLeaderboard(quotes, fetchMissingPrice, leaderboard);
         for (const entry of performanceLeaderboard) {
             const ch = charByName.get(entry.name);
             if (ch) entry.character = ch;
