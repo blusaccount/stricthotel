@@ -139,7 +139,12 @@
 
     // --- Game Started (transition from waiting to game screen) ---
     socket.on('game-started', function (data) {
-        isHost = state.isHost;
+        // Use hostId from server payload for accurate host determination
+        if (data && data.hostId) {
+            isHost = (data.hostId === state.mySocketId);
+        } else {
+            isHost = state.isHost;
+        }
         showScreen('game');
 
         // Show URL input for all users
@@ -152,24 +157,15 @@
             window.MaexchenChat.addLocalMessage('Watch Party gestartet!');
         }
 
-        // Start periodic sync
+        // Start periodic sync (only meaningful for host, but interval checks isHost)
         startSyncInterval();
 
         // Start keep-alive to prevent server spin-down
         startKeepAlive();
 
-        // Show player list from payload
-        // Note: game-started doesn't include socketId, so we determine host by:
-        // - If we are the host (state.isHost), mark the first player (ourselves) as host
-        // - room-update will refresh with accurate isHost flags from server
+        // Show player list from payload (server includes isHost flag per player)
         if (data && data.players) {
-            renderPartyPlayers(data.players.map(function (p, index) {
-                return { 
-                    name: p.name, 
-                    character: p.character, 
-                    isHost: state.isHost && index === 0 // Mark ourselves as host if we're first player
-                };
-            }));
+            renderPartyPlayers(data.players);
         }
 
         // Request sync in case video is already loaded
@@ -195,6 +191,19 @@
         if (e.key === 'Enter') $('btn-load-video')?.click();
     });
 
+    // --- Server Error Feedback ---
+    socket.on('watchparty-error', function (data) {
+        if (!data || !data.message) return;
+        var input = $('input-video-url');
+        if (input) {
+            input.style.borderColor = 'var(--danger)';
+            setTimeout(function () { input.style.borderColor = 'var(--accent)'; }, 2000);
+        }
+        if (window.MaexchenChat) {
+            window.MaexchenChat.addLocalMessage(data.message);
+        }
+    });
+
     // --- Receive Video Load ---
     socket.on('watchparty-video', function (data) {
         if (!data || !data.videoId) return;
@@ -207,7 +216,9 @@
         waitForPlayer(function () {
             ignorePlayerEvents = true;
             if (data.time > 0) {
-                ytPlayer.seekTo(data.time, true);
+                var duration = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+                var seekTime = duration > 0 ? Math.min(data.time, duration) : data.time;
+                ytPlayer.seekTo(seekTime, true);
             }
             if (data.state === 'playing') {
                 ytPlayer.playVideo();
@@ -223,11 +234,13 @@
         ignorePlayerEvents = true;
 
         var currentTime = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
-        var timeDiff = Math.abs(currentTime - data.time);
+        var duration = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+        var seekTime = duration > 0 ? Math.min(data.time, duration) : data.time;
+        var timeDiff = Math.abs(currentTime - seekTime);
 
         // Only seek if drift > 2 seconds
         if (timeDiff > 2) {
-            ytPlayer.seekTo(data.time, true);
+            ytPlayer.seekTo(seekTime, true);
         }
 
         if (data.state === 'playing' && ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
@@ -250,13 +263,15 @@
         if (!data || !data.players) return;
         var wasHost = isHost;
         isHost = (data.hostId === state.mySocketId);
-        
+
         // Server already includes isHost flag in player data
         renderPartyPlayers(data.players);
 
-        // If we just became host, start sync interval
+        // Manage sync interval on host changes
         if (isHost && !wasHost) {
             startSyncInterval();
+        } else if (!isHost && wasHost) {
+            stopSyncInterval();
         }
     });
 

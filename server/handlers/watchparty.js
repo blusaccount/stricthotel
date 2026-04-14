@@ -6,7 +6,10 @@ export function registerWatchpartyHandlers(socket, io, deps) {
     socket.on('watchparty-load', (videoId) => { try {
         if (!checkRateLimit(socket, 5)) return;
         const id = validateYouTubeId(videoId);
-        if (!id) return;
+        if (!id) {
+            socket.emit('watchparty-error', { message: 'Ungültige YouTube Video-ID.' });
+            return;
+        }
 
         const room = getRoom(socket.id);
         if (!room || room.gameType !== 'watchparty') return;

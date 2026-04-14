@@ -133,6 +133,10 @@ export async function removePlayerFromRoom(io, socketId, room) {
             if (gpIdx !== -1) {
                 room.game.players.splice(gpIdx, 1);
             }
+            // Remove from room.players first so both lists are consistent before broadcast
+            room.players.splice(playerIndex, 1);
+            socketToRoom.delete(socketId);
+
             io.to(room.code).emit('player-disconnected', {
                 playerName,
                 players: room.game.players.map(p => ({ name: p.name, lives: p.lives }))
@@ -164,9 +168,12 @@ export async function removePlayerFromRoom(io, socketId, room) {
         }
     }
 
-    // Remove from room players
-    room.players.splice(playerIndex, 1);
-    socketToRoom.delete(socketId);
+    // Remove from room players (skip if already removed in watchparty branch above)
+    const alreadyRemoved = room.game && room.gameType === 'watchparty';
+    if (!alreadyRemoved) {
+        room.players.splice(playerIndex, 1);
+        socketToRoom.delete(socketId);
+    }
 
     // Clean up bet for leaving player and reset requiredBet if no bets remain
     if (room.bets) {

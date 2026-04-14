@@ -121,8 +121,12 @@ export function registerMaexchenHandlers(socket, io, deps) {
         };
 
         io.to(room.code).emit('game-started', {
-            players: room.game.players.map(p => ({ name: p.name, lives: p.lives, character: p.character })),
-            pot: room.game.pot
+            players: room.game.players.map(p => ({
+                name: p.name, lives: p.lives, character: p.character,
+                isHost: p.socketId === room.hostId
+            })),
+            pot: room.game.pot,
+            hostId: room.hostId
         });
 
         sendTurnStart(io, room);

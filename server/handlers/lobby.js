@@ -124,7 +124,11 @@ export function registerLobbyHandlers(socket, io, { checkRateLimit }) {
             // Send game-started so the joiner transitions to game screen
             socket.emit('room-joined', { code });
             socket.emit('game-started', {
-                players: room.game.players.map(p => ({ name: p.name, lives: p.lives, character: p.character }))
+                players: room.game.players.map(p => ({
+                    name: p.name, lives: p.lives, character: p.character,
+                    isHost: p.socketId === room.hostId
+                })),
+                hostId: room.hostId
             });
         } else {
             socket.emit('room-joined', { code });
