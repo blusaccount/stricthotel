@@ -73,7 +73,9 @@
                     disablekb: 0,
                     modestbranding: 1,
                     rel: 0,
-                    fs: 1
+                    fs: 1,
+                    enablejsapi: 1,
+                    origin: window.location.origin
                 },
                 events: {
                     onStateChange: onPlayerStateChange
