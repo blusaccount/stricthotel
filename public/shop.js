@@ -56,7 +56,7 @@
     socket.on('connect', () => {
         registerSelf();
         socket.emit('get-balance');
-        socket.emit('get-player-diamonds');
+        socket.emit('get-my-diamonds');
     });
 
     socket.on('balance-update', (data) => {

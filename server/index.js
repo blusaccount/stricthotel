@@ -46,10 +46,15 @@ if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
     console.error('ERROR: SESSION_SECRET environment variable is required in production');
     process.exit(1);
 }
+if (!process.env.SESSION_SECRET) {
+    console.warn('⚠ SESSION_SECRET not set — using an insecure static dev fallback. Set SESSION_SECRET before deploying.');
+}
 
 // Session middleware
+// Dev fallback is a stable string (not Math.random()) so sessions survive restarts in local dev.
+// Production is guarded above; this fallback is never used when NODE_ENV=production.
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'strict-hotel-dev-secret-' + Math.random(),
+    secret: process.env.SESSION_SECRET || 'strict-hotel-dev-insecure-fallback',
     resave: false,
     saveUninitialized: false,
     cookie: {

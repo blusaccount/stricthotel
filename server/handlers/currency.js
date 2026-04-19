@@ -25,10 +25,9 @@ export function registerCurrencyHandlers(socket, io, { checkRateLimit, onlinePla
         console.log(`Registered: ${name} for ${game}`);
     } catch (err) { console.error('register-player error:', err.message); } });
 
-    // --- Get Player Diamonds (for contacts list) ---
-    // NOTE: This handler and the one below share the same event name but have different signatures.
-    // This is pre-existing design: contacts.js passes {name}, shop.js passes nothing.
-    // Both handlers will fire; the first validates data.name, the second uses socket's player.
+    // --- Get Player Diamonds (for contacts list, by name) ---
+    // Emits `player-diamonds` with the resolved { name, diamonds }. Used by contacts.js
+    // to populate diamond counts for every online player.
     socket.on('get-player-diamonds', async (data) => { try {
         if (!checkRateLimit(socket)) return;
         if (!data || typeof data !== 'object') return;
@@ -74,14 +73,15 @@ export function registerCurrencyHandlers(socket, io, { checkRateLimit, onlinePla
         socket.emit('balance-update', { balance: await getBalance(player.name) });
     } catch (err) { console.error('get-balance error:', err.message); } });
 
-    // --- Get Player Diamonds ---
-    socket.on('get-player-diamonds', async () => { try {
+    // --- Get My Diamonds (for the logged-in socket's own balance) ---
+    // Emits `diamonds-update` with just { diamonds }. Used by shop.js.
+    socket.on('get-my-diamonds', async () => { try {
         if (!checkRateLimit(socket)) return;
         const player = onlinePlayers.get(socket.id);
         if (!player || !player.name) return;
         const diamonds = await getDiamonds(player.name);
         socket.emit('diamonds-update', { diamonds });
-    } catch (err) { console.error('get-player-diamonds error:', err.message); } });
+    } catch (err) { console.error('get-my-diamonds error:', err.message); } });
 
     // --- Buy Diamonds ---
     socket.on('buy-diamonds', async (data) => { try {

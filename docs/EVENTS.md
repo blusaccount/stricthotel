@@ -33,13 +33,16 @@ S->C:
 C->S:
 - `get-balance` - Fetch player's StrictCoin balance
 - `get-player-character` - Fetch character data
-- `get-player-diamonds` - Fetch premium currency
+- `get-player-diamonds` - Fetch another player's diamond count by name (contacts list); responds via `player-diamonds`
+- `get-my-diamonds` - Fetch the current socket's own diamond count; responds via `diamonds-update`
 - `buy-diamonds` - Purchase diamonds (premium)
 - `lobby-make-it-rain` - Spend coins for lobby animation
 
 S->C:
 - `balance-update` - Balance changed
 - `player-character` - Character data response
+- `player-diamonds` - Diamond count for a looked-up player (response to `get-player-diamonds`)
+- `diamonds-update` - Own diamond count (response to `get-my-diamonds` / `buy-diamonds`)
 
 ## Mäxchen (Dice Bluffing)
 **Handler:** [server/handlers/maexchen.js](../server/handlers/maexchen.js)
