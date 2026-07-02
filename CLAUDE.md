@@ -1,30 +1,36 @@
 # Projektkontext
 
-Dies ist ein 3D Social-Hangout-Game in Godot 4.x (GDScript), inspiriert vom
+Dies ist ein 3D Social-Hangout-Game mit Babylon.js (TypeScript), inspiriert vom
 Battle-Royale-Minigame-Genre, mit eigener goofy/parodistischer Identität.
 Der vollständige Projektplan liegt in `PROJECT_PLAN.md`.
 
 ## Grundregeln
-- Sprache: ausschließlich GDScript, kein C#
-- Multiplayer: Godot High-Level-Multiplayer-API mit ENetMultiplayerPeer
-- Steam-Anbindung ausschließlich über addons/godotsteam
-- Szenen (.tscn) und Ressourcen (.tres) sind Textdateien und können direkt bearbeitet werden;
-  bei rein visuellen Änderungen (Platzierung, Kamera, Partikel) im Editor prüfen lassen
-- Neue Minigames erben von scripts/minigames/minigame_base.gd
+- Sprache: ausschließlich TypeScript
+- Client-Engine: Babylon.js, Physik über die integrierte Havok-Anbindung
+- UI über Babylon GUI (kein separates DOM-Overlay-Framework, außer explizit gewünscht)
+- Multiplayer: Node.js + Socket.IO; Client und Server teilen sich Typen aus shared/types.ts
+- Neue Minigames erben von client/scenes/MinigameBase.ts
 - Economy-Logik ist konzeptionell an das bestehende StrictHotel-Currency-System angelehnt,
   aber ein eigenständiges System (kein Datenbank-Sharing zwischen Repos)
+- Build über Vite
 
 ## Nicht anfassen / Vorsicht
-- addons/godotsteam nicht manuell verändern (externe Dependency)
-- project.godot nur bei expliziter Anfrage anpassen
+- shared/types.ts ist die Single Source of Truth für Netzwerk-Messages —
+  Änderungen immer auf beiden Seiten (Client + Server) konsistent halten
+- package.json / vite.config.ts nur bei expliziter Anfrage anpassen
+- Der Electron/Steam-Wrapper kommt erst in einer späteren Phase; Client-Code
+  soll bis dahin ohne Electron-Abhängigkeiten lauffähig bleiben
 
 ## Aktueller Stand (Phase 0)
-- Begehbarer Hub-Blockout, ein Spieler-Controller, lokaler ENet-Multiplayer-Test
-  (Host/Join-UI in `scenes/ui/lobby_menu.tscn`) und ein Basis-Chat-Overlay stehen.
-- Ragdoll-Physik ist nur als Stub vorhanden (`scripts/player/ragdoll_physics.gd`) —
-  wartet auf ein gerigtes Charaktermodell (offene Art-Style-Frage, siehe PROJECT_PLAN.md Abschnitt 8).
-- Alle `.tscn`-Dateien in diesem Skelett wurden von Hand geschrieben (kein Godot-Editor
-  in der Erstellungs-Umgebung verfügbar) — vor dem Weiterbauen einmal im Editor öffnen
-  und Szenen/Resourcen speichern lassen, damit UIDs und Formatierung sauber sind.
-- Minigame-Arenen, Avatar-Baukasten, Currency-Wiring und GodotSteam-Integration
-  sind noch nicht gebaut (siehe Roadmap in PROJECT_PLAN.md).
+- Portiert vom früheren Godot-4-Skelett (siehe Git-History vor der Umstellung):
+  begehbarer Hub-Blockout (`client/scenes/HubScene.ts`), Spieler-Controller mit
+  WASD/Maus/Sprung (`client/player/PlayerController.ts`), Socket.IO-Server mit
+  persistentem HubRoom (`server/`), Player-Sync mit Interpolation, Chat-Overlay
+  und Lobby-Menü (Babylon GUI).
+- Phase 0 nutzt noch KEIN Havok: der Controller läuft über Babylons einfaches
+  Collision-System (`moveWithCollisions`). Havok kommt mit der Ragdoll-Arbeit;
+  `client/player/RagdollPhysics.ts` ist nur ein Stub und wartet auf ein
+  gerigtes Charaktermodell (offene Art-Style-Frage, PROJECT_PLAN.md Abschnitt 8).
+- Minigame-Arenen, Avatar-Baukasten (`AvatarCustomizer.ts` ist Stub) und die
+  Currency-Persistenz (server/db/) sind noch nicht gebaut — siehe Roadmap in
+  PROJECT_PLAN.md Abschnitt 7.
