@@ -13,6 +13,10 @@ Der vollständige Projektplan liegt in `PROJECT_PLAN.md`.
 - Economy-Logik ist konzeptionell an das bestehende StrictHotel-Currency-System angelehnt,
   aber ein eigenständiges System (kein Datenbank-Sharing zwischen Repos)
 - Build über Vite
+- WICHTIG: Alles muss kommerziell nutzbar sein (späterer Steam-Release). Nur
+  Dependencies, Code-Vorlagen und Assets mit permissiven Lizenzen übernehmen
+  (MIT/Apache-2.0/BSD/CC0/CC-BY mit Attribution). GPL/Copyleft-Projekte nur
+  als Lernvorlage studieren, niemals Code/Assets daraus kopieren.
 
 ## Nicht anfassen / Vorsicht
 - shared/types.ts ist die Single Source of Truth für Netzwerk-Messages —
