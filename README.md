@@ -1,25 +1,39 @@
 # Hangout Game (Arbeitstitel)
 
-Goofy 3D-Social-Hangout-Game in Godot 4.x / GDScript. Voller Projektplan in
+Goofy 3D-Social-Hangout-Game mit Babylon.js + TypeScript (Client) und
+Node.js + Socket.IO (Server). Voller Projektplan in
 [`PROJECT_PLAN.md`](PROJECT_PLAN.md), Arbeitsregeln für Claude Code in
 [`CLAUDE.md`](CLAUDE.md).
 
 ## Setup
 
-1. Godot 4.7 (stable) öffnen, `project.godot` importieren.
-2. Dieses Skeleton wurde ohne laufenden Editor geschrieben — beim ersten Öffnen
-   einmal alle Szenen durchgehen und speichern, damit Godot UIDs/`.godot`-Cache anlegt.
+```bash
+npm install
+```
 
 ## Lokaler Multiplayer-Test
 
-1. Projekt zweimal starten (zwei Fenster/Instanzen).
-2. In Instanz 1: Spielername eingeben, **Host** klicken.
-3. In Instanz 2: Spielername eingeben, Adresse `127.0.0.1` lassen, **Join** klicken.
-4. Beide Spieler sollten sich im Hub sehen und bewegen können (WASD + Maus, Leertaste = Sprung).
-5. **Enter** öffnet den Chat unten links.
+1. Server starten: `npm run dev:server` (Socket.IO auf Port 3001)
+2. Client-Dev-Server starten: `npm run dev` (Vite, Port 5173)
+3. `http://localhost:5173` in **zwei** Browser-Tabs/-Fenstern öffnen.
+4. In beiden: Spielername eingeben, Adresse (`localhost:3001`) lassen,
+   **Verbinden** klicken.
+5. Beide Spieler sollten sich im Hub sehen und bewegen können
+   (Klick ins Spiel für Mouse-Look, WASD + Maus, Leertaste = Sprung).
+6. **Enter** öffnet den Chat unten links, Enter sendet, Escape schließt.
+
+## Weitere Skripte
+
+| Skript | Zweck |
+|---|---|
+| `npm run build` | Produktions-Build des Clients nach `dist/` |
+| `npm run start` | Server ohne Watch-Modus (z.B. auf Render.com) |
+| `npm run typecheck` | `tsc --noEmit` über Client, Server und shared/ |
 
 ## Stand
 
-Phase 0 der Roadmap (siehe `PROJECT_PLAN.md`, Abschnitt 7): begehbarer Hub-Blockout,
-Spieler-Controller, ENet-Host/Join, Chat-Overlay. Minigames, Avatar-Baukasten, Currency-Wiring
+Phase 0 der Roadmap (siehe `PROJECT_PLAN.md`, Abschnitt 7): begehbarer
+Hub-Blockout, Spieler-Controller, Socket.IO-Server mit persistentem HubRoom,
+Player-Sync und Chat-Overlay — portiert vom früheren Godot-Skelett (siehe
+Git-History). Havok/Ragdoll, Minigames, Avatar-Baukasten, Currency-Wiring
 und Steam-Integration folgen in den nächsten Phasen.
